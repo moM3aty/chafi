@@ -1,0 +1,70 @@
+﻿<!-- مسار الملف: Views/Admin/Videos.cshtml -->
+@model IEnumerable<Chafi.Models.Video>
+@{
+    ViewData["Title"] = "إدارة الفيديوهات";
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-video text-gld-500 ml-2"></i>إدارة الفيديوهات</h1>
+        <a href="@Url.Action("CreateVideo")" class="cf-btn cf-btn-gld cf-btn-sm">
+            <i class="fas fa-plus"></i> إضافة فيديو جديد
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl border-2 border-border overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100 text-brk-500">
+                    <tr>
+                        <th class="p-4 font-bold">الفيديو</th>
+                        <th class="p-4 font-bold">المقدم / الراقي</th>
+                        <th class="p-4 font-bold text-center">السعر</th>
+                        <th class="p-4 font-bold text-center">المشاهدات</th>
+                        <th class="p-4 font-bold text-center">الحالة</th>
+                        <th class="p-4 font-bold text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                                <td class="p-4 flex items-center gap-3">
+                                    <div class="relative w-16 h-10 rounded overflow-hidden border border-gray-200 shrink-0">
+                                        <img src="@(item.ThumbnailUrl ?? "https://picsum.photos/100")" class="w-full h-full object-cover">
+                                        <div class="absolute inset-0 bg-black/20 flex items-center justify-center"><i class="fas fa-play text-white/70 text-xs"></i></div>
+                                    </div>
+                                    <span class="font-bold text-pri-900 truncate max-w-[200px]">@item.Title</span>
+                                </td>
+                                <td class="p-4 text-brk-500">@item.Presenter</td>
+                                <td class="p-4 text-center font-bold text-pri-700">@(item.Price == 0 ? "مجاني" : item.Price + " ر.س")</td>
+                                <td class="p-4 text-center text-brk-500">@item.ViewCount</td>
+                                <td class="p-4 text-center">
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">مفعل</span>
+                                    }
+                                    else
+                                    {
+
+                                        <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">معطل</span>
+                                    }
+                                </td>
+                                <td class="p-4 flex justify-center gap-2">
+                                    <button class="w-8 h-8 rounded bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition flex items-center justify-center" title="تعديل"><i class="fas fa-edit"></i></button>
+                                    <button class="w-8 h-8 rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition flex items-center justify-center" title="حذف"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6" class="p-8 text-center text-brk-400">لا توجد فيديوهات حتى الآن</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,76 @@
+﻿<!-- مسار الملف: Views/Product/Index.cshtml -->
+@model IEnumerable<Chafi.Models.Product>
+@{
+    ViewData["Title"] = "جميع المنتجات";
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <div class="sec-hd mb-10 afiu">
+        <div class="relative z-10 text-center">
+            <h1 class="text-3xl sm:text-4xl font-black text-white font-amiri leading-tight mb-4">متجر منتجات الرقية</h1>
+            <p class="text-white/80 text-base max-w-2xl mx-auto">تصفح مجموعتنا الواسعة من الزيوت، المياه، العسل، والمزيد من المنتجات المحضرة بعناية.</p>
+        </div>
+    </div>
+
+    <!-- فلتر الأقسام -->
+    <div class="flex flex-wrap items-center gap-3 mb-8 afiu" style="animation-delay: 0.1s">
+        <span class="text-brk-500 font-bold text-sm"><i class="fas fa-filter text-gld-500 ml-1"></i> تصفية:</span>
+        <a href="@Url.Action("Index", "Product")" class="px-4 py-2 rounded-full text-xs font-bold transition @(Context.Request.Query["categoryId"].ToString() == "" ? "bg-pri-500 text-white" : "bg-white border border-gray-200 text-brk-500 hover:border-pri-300")">
+            الكل
+        </a>
+        <!-- يمكنك جلب الأقسام وتمريرها في ViewBag لإنشاء أزرار الفلترة ديناميكياً -->
+        <a href="@Url.Action("Index", "Product", new { categoryId = 2 })" class="px-4 py-2 rounded-full text-xs font-bold transition @(Context.Request.Query["categoryId"].ToString() == "2" ? "bg-pri-500 text-white" : "bg-white border border-gray-200 text-brk-500 hover:border-pri-300")">الزيوت</a>
+        <a href="@Url.Action("Index", "Product", new { categoryId = 3 })" class="px-4 py-2 rounded-full text-xs font-bold transition @(Context.Request.Query["categoryId"].ToString() == "3" ? "bg-pri-500 text-white" : "bg-white border border-gray-200 text-brk-500 hover:border-pri-300")">المياه</a>
+        <a href="@Url.Action("Index", "Product", new { categoryId = 4 })" class="px-4 py-2 rounded-full text-xs font-bold transition @(Context.Request.Query["categoryId"].ToString() == "4" ? "bg-pri-500 text-white" : "bg-white border border-gray-200 text-brk-500 hover:border-pri-300")">العسل</a>
+    </div>
+
+    <!-- شبكة المنتجات -->
+    @if (!Model.Any())
+    {
+        <div class="bg-white rounded-3xl border-2 border-border p-12 text-center shadow-sm afiu" style="animation-delay: 0.2s">
+            <i class="fas fa-box-open text-6xl text-brk-300 mb-4 opacity-50"></i>
+            <h3 class="text-xl font-bold text-pri-900 mb-2">لا توجد منتجات حالياً</h3>
+            <p class="text-brk-400">لم يتم العثور على منتجات في هذا القسم.</p>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            @foreach (var prod in Model)
+            {
+                <div class="prod-card afiu" style="animation-delay: 0.2s">
+                    @if (prod.HasDiscount)
+                    {
+                        <span class="prod-badge offer">خصم @prod.DiscountPercentage%</span>
+                    }
+                    <div class="prod-img-w">
+                        <img src="@(prod.ImageUrl ?? "https://picsum.photos/400")" alt="@prod.Name" loading="lazy">
+                        <div class="prod-acts">
+                            <form asp-controller="Wishlist" asp-action="Toggle" method="post">
+                                <input type="hidden" name="productId" value="@prod.Id" />
+                                <button type="submit" class="prod-act" title="المفضلة"><i class="fas fa-heart"></i></button>
+                            </form>
+                            <a href="@Url.Action("Details", "Product", new { id = prod.Id, slug = prod.Slug })" class="prod-act" title="تفاصيل"><i class="fas fa-eye"></i></a>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h4 class="font-bold text-pri-900 text-sm mb-1.5 leading-relaxed line-clamp-2" style="min-height:40px">@prod.Name</h4>
+                        <div class="flex items-center justify-between mt-3">
+                            <div>
+                                @if (prod.HasDiscount)
+                                {
+                                    <span class="text-brk-300 text-xs line-through ml-1">@prod.OldPrice ر.س</span>
+                                }
+                                <span class="text-pri-700 font-black text-lg">@prod.Price ر.س</span>
+                            </div>
+                            <form asp-controller="Cart" asp-action="AddToCart" method="post">
+                                <input type="hidden" name="productId" value="@prod.Id" />
+                                <button type="submit" class="cf-btn cf-btn-pri cf-btn-sm text-xs py-2 px-3"><i class="fas fa-cart-plus"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

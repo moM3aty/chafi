@@ -1,0 +1,92 @@
+﻿<!-- مسار الملف: Views/Product/Details.cshtml -->
+@model Chafi.Models.Product
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <!-- مسار التنقل (Breadcrumb) -->
+    <div class="flex items-center gap-2 text-sm text-brk-400 mb-8">
+        <a href="@Url.Action("Index", "Home")" class="hover:text-pri-600 transition"><i class="fas fa-home"></i> الرئيسية</a>
+        <i class="fas fa-chevron-left text-[10px]"></i>
+        <a href="@Url.Action("Details", "Category", new { id = Model.CategoryId })" class="hover:text-pri-600 transition">@Model.Category.Name</a>
+        <i class="fas fa-chevron-left text-[10px]"></i>
+        <span class="text-pri-900 font-bold truncate">@Model.Name</span>
+    </div>
+
+    <div class="bg-white rounded-3xl border-2 border-border p-6 sm:p-8 flex flex-col lg:flex-row gap-10">
+
+        <!-- صور المنتج -->
+        <div class="w-full lg:w-5/12 shrink-0">
+            <div class="rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 aspect-square relative mb-4">
+                @if (Model.HasDiscount)
+                {
+                    <span class="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold z-10">خصم @Model.DiscountPercentage%</span>
+                }
+                <img src="@(Model.ImageUrl ?? "https://picsum.photos/800/800")" alt="@Model.Name" class="w-full h-full object-cover">
+            </div>
+        </div>
+
+        <!-- تفاصيل المنتج -->
+        <div class="w-full lg:w-7/12 flex flex-col">
+            <h1 class="text-3xl sm:text-4xl font-black text-pri-900 font-amiri mb-3 leading-tight">@Model.Name</h1>
+
+            <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
+                <div class="flex text-gld-500 text-sm">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        if (i <= Math.Round(Model.AverageRating))
+                        {
+                            <i class="fas fa-star"></i>
+                        }
+                        else
+                        {
+
+                            <i class="fas fa-star text-gray-300"></i>
+                        }
+                    }
+                </div>
+                <span class="text-brk-400 text-sm">(@Model.ReviewsCount تقييم)</span>
+                <span class="text-gray-300">|</span>
+                <span class="text-pri-600 text-sm font-bold"><i class="fas fa-shopping-bag ml-1"></i> @Model.SalesCount تم الشراء</span>
+            </div>
+
+            <div class="flex items-end gap-3 mb-6">
+                <span class="text-4xl font-black text-pri-700">@Model.Price <span class="text-lg font-bold">ر.س</span></span>
+                @if (Model.HasDiscount)
+                {
+                    <span class="text-lg text-brk-300 line-through mb-1">@Model.OldPrice ر.س</span>
+                }
+            </div>
+
+            <div class="prose prose-sm text-brk-500 leading-relaxed mb-8">
+                @Html.Raw(Model.Description.Replace("\n", "<br/>"))
+            </div>
+
+            <div class="mt-auto">
+                <form asp-controller="Cart" asp-action="AddToCart" method="post" class="flex flex-wrap gap-4">
+                    <input type="hidden" name="productId" value="@Model.Id" />
+
+                    <div class="qty bg-gray-50 border-2 border-border h-14 rounded-xl">
+                        <button type="button" class="qty-b w-12 h-full text-xl" onclick="this.nextElementSibling.stepDown()">-</button>
+                        <input type="number" name="quantity" value="1" min="1" max="@Model.StockQuantity" class="qty-v w-12 bg-transparent text-lg border-0 focus:ring-0 text-center" readonly>
+                        <button type="button" class="qty-b w-12 h-full text-xl" onclick="this.previousElementSibling.stepUp()">+</button>
+                    </div>
+
+                    <button type="submit" class="cf-btn cf-btn-pri flex-1 h-14 text-lg">
+                        <i class="fas fa-cart-plus"></i> أضف إلى السلة
+                    </button>
+
+                    <button type="button" class="w-14 h-14 rounded-xl border-2 border-border text-brk-400 hover:text-red-500 hover:border-red-200 flex items-center justify-center transition text-xl bg-white" onclick="showToast('قريباً إضافة للمفضلة', 'ok')">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </form>
+
+                <div class="flex items-center gap-6 mt-6 pt-6 border-t border-gray-100 text-sm text-brk-400">
+                    <span class="flex items-center gap-2"><i class="fas fa-truck text-gld-500"></i> شحن سريع وآمن</span>
+                    <span class="flex items-center gap-2"><i class="fas fa-shield-alt text-gld-500"></i> منتج أصلي 100%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

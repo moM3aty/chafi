@@ -1,0 +1,103 @@
+﻿<!-- مسار الملف: Views/Admin/Index.cshtml -->
+@{
+    ViewData["Title"] = "لوحة التحكم";
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-3xl font-black text-pri-900 font-amiri">لوحة تحكم الإدارة</h1>
+        <a href="@Url.Action("Index", "Home")" class="cf-btn cf-btn-out cf-btn-sm" target="_blank">
+            <i class="fas fa-external-link-alt"></i> زيارة المتجر
+        </a>
+    </div>
+
+    <!-- البطاقات الإحصائية -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 mb-10">
+        <div class="bg-white p-6 rounded-2xl border-2 border-border shadow-sm text-center">
+            <div class="w-12 h-12 mx-auto bg-green-50 text-pri-600 rounded-full flex items-center justify-center text-xl mb-3"><i class="fas fa-folder-open"></i></div>
+            <h3 class="text-brk-500 font-bold mb-1 text-sm">الأقسام</h3>
+            <p class="text-3xl font-black text-pri-900">@ViewBag.CategoriesCount</p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border-2 border-border shadow-sm text-center">
+            <div class="w-12 h-12 mx-auto bg-yellow-50 text-gld-600 rounded-full flex items-center justify-center text-xl mb-3"><i class="fas fa-box"></i></div>
+            <h3 class="text-brk-500 font-bold mb-1 text-sm">المنتجات</h3>
+            <p class="text-3xl font-black text-pri-900">@ViewBag.ProductsCount</p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border-2 border-border shadow-sm text-center">
+            <div class="w-12 h-12 mx-auto bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-xl mb-3"><i class="fas fa-headphones"></i></div>
+            <h3 class="text-brk-500 font-bold mb-1 text-sm">الصوتيات</h3>
+            <p class="text-3xl font-black text-pri-900">@ViewBag.AudiosCount</p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border-2 border-border shadow-sm text-center">
+            <div class="w-12 h-12 mx-auto bg-red-50 text-red-600 rounded-full flex items-center justify-center text-xl mb-3"><i class="fas fa-video"></i></div>
+            <h3 class="text-brk-500 font-bold mb-1 text-sm">الفيديوهات</h3>
+            <p class="text-3xl font-black text-pri-900">@ViewBag.VideosCount</p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border-2 border-border shadow-sm text-center">
+            <div class="w-12 h-12 mx-auto bg-purple-50 text-purple-600 rounded-full flex items-center justify-center text-xl mb-3"><i class="fas fa-shopping-cart"></i></div>
+            <h3 class="text-brk-500 font-bold mb-1 text-sm">الطلبات</h3>
+            <p class="text-3xl font-black text-pri-900">@ViewBag.OrdersCount</p>
+        </div>
+    </div>
+
+    <!-- قائمة الوصول السريع لجميع صفحات الإدارة -->
+    <h2 class="text-2xl font-black text-pri-900 mb-6 border-b border-gray-100 pb-3">الوصول السريع لجميع الأقسام</h2>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
+        <a href="@Url.Action("Categories", "Admin")" class="bg-white p-5 rounded-xl border border-gray-100 hover:border-pri-300 hover:shadow-md transition text-center block no-underline">
+            <i class="fas fa-sitemap text-3xl text-pri-600 mb-3"></i>
+            <h3 class="font-bold text-pri-900 text-sm">الأقسام</h3>
+        </a>
+        <a href="@Url.Action("Products", "Admin")" class="bg-white p-5 rounded-xl border border-gray-100 hover:border-pri-300 hover:shadow-md transition text-center block no-underline">
+            <i class="fas fa-box-open text-3xl text-pri-600 mb-3"></i>
+            <h3 class="font-bold text-pri-900 text-sm">المنتجات</h3>
+        </a>
+        <a href="@Url.Action("Audios", "Admin")" class="bg-white p-5 rounded-xl border border-gray-100 hover:border-pri-300 hover:shadow-md transition text-center block no-underline">
+            <i class="fas fa-headphones text-3xl text-pri-600 mb-3"></i>
+            <h3 class="font-bold text-pri-900 text-sm">الصوتيات</h3>
+        </a>
+        <a href="@Url.Action("Videos", "Admin")" class="bg-white p-5 rounded-xl border border-gray-100 hover:border-pri-300 hover:shadow-md transition text-center block no-underline">
+            <i class="fas fa-video text-3xl text-pri-600 mb-3"></i>
+            <h3 class="font-bold text-pri-900 text-sm">الفيديوهات</h3>
+        </a>
+        <a href="@Url.Action("Packages", "Admin")" class="bg-white p-5 rounded-xl border border-gray-100 hover:border-pri-300 hover:shadow-md transition text-center block no-underline">
+            <i class="fas fa-boxes text-3xl text-pri-600 mb-3"></i>
+            <h3 class="font-bold text-pri-900 text-sm">الباقات</h3>
+        </a>
+        <a href="@Url.Action("Orders", "Admin")" class="bg-white p-5 rounded-xl border border-gray-100 hover:border-pri-300 hover:shadow-md transition text-center block no-underline">
+            <i class="fas fa-shopping-cart text-3xl text-pri-600 mb-3"></i>
+            <h3 class="font-bold text-pri-900 text-sm">الطلبات</h3>
+        </a>
+        <a href="@Url.Action("Advertisements", "Admin")" class="bg-white p-5 rounded-xl border border-gray-100 hover:border-pri-300 hover:shadow-md transition text-center block no-underline">
+            <i class="fas fa-ad text-3xl text-pri-600 mb-3"></i>
+            <h3 class="font-bold text-pri-900 text-sm">الإعلانات</h3>
+        </a>
+        <a href="@Url.Action("Reviews", "Admin")" class="bg-white p-5 rounded-xl border border-gray-100 hover:border-pri-300 hover:shadow-md transition text-center block no-underline relative">
+            @if (ViewBag.ReviewsCount > 0)
+            {
+                <span class="absolute top-2 right-2 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">@ViewBag.ReviewsCount</span>
+            }
+            <i class="fas fa-star-half-alt text-3xl text-pri-600 mb-3"></i>
+            <h3 class="font-bold text-pri-900 text-sm">التقييمات</h3>
+        </a>
+        <a href="@Url.Action("Messages", "Admin")" class="bg-white p-5 rounded-xl border border-gray-100 hover:border-pri-300 hover:shadow-md transition text-center block no-underline relative">
+            @if (ViewBag.MessagesCount > 0)
+            {
+                <span class="absolute top-2 right-2 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">@ViewBag.MessagesCount</span>
+            }
+            <i class="fas fa-envelope text-3xl text-pri-600 mb-3"></i>
+            <h3 class="font-bold text-pri-900 text-sm">رسائل الزوار</h3>
+        </a>
+        <a href="@Url.Action("Offers", "Admin")" class="bg-white p-5 rounded-xl border border-gray-100 hover:border-pri-300 hover:shadow-md transition text-center block no-underline">
+            <i class="fas fa-tags text-3xl text-gld-500 mb-3"></i>
+            <h3 class="font-bold text-pri-900 text-sm">العروض والخصومات</h3>
+        </a>
+        <a href="@Url.Action("NewsletterSubscriptions", "Admin")" class="bg-white p-5 rounded-xl border border-gray-100 hover:border-pri-300 hover:shadow-md transition text-center block no-underline">
+            <i class="fas fa-users text-3xl text-gld-500 mb-3"></i>
+            <h3 class="font-bold text-pri-900 text-sm">المشتركين بالنشرة</h3>
+        </a>
+        <a href="@Url.Action("SiteSettings", "Admin")" class="bg-white p-5 rounded-xl border border-gray-100 hover:border-pri-300 hover:shadow-md transition text-center block no-underline">
+            <i class="fas fa-cogs text-3xl text-brk-500 mb-3"></i>
+            <h3 class="font-bold text-pri-900 text-sm">إعدادات الموقع</h3>
+        </a>
+    </div>
+</div>

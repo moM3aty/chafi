@@ -1,0 +1,62 @@
+﻿<!-- مسار الملف: Views/Admin/CreateCategory.cshtml -->
+@model Chafi.Models.Category
+@{
+    ViewData["Title"] = "إضافة قسم جديد";
+}
+
+<div class="max-w-4xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-folder-plus text-gld-500 ml-2"></i>إضافة قسم جديد</h1>
+        <a href="@Url.Action("Categories")" class="cf-btn cf-btn-out cf-btn-sm text-xs">
+            <i class="fas fa-arrow-right"></i> العودة للأقسام
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl border-2 border-border p-6 sm:p-10 shadow-sm">
+        <!-- انتبه لاستخدام enctype="multipart/form-data" لرفع الملفات -->
+        <form asp-action="CreateCategory" method="post" enctype="multipart/form-data">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">اسم القسم <span class="req">*</span></label>
+                    <input asp-for="Name" class="cf-input" placeholder="مثال: قسم الزيوت" required />
+                    <span asp-validation-for="Name" class="cf-err show mt-1"></span>
+                </div>
+
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">الوصف المختصر</label>
+                    <input asp-for="ShortDescription" class="cf-input" placeholder="وصف قصير يظهر في البطاقات" />
+                </div>
+            </div>
+
+            <div class="cf-group mb-6">
+                <label class="cf-label">الوصف الشامل (التعريف)</label>
+                <textarea asp-for="Description" class="cf-textarea" rows="6" placeholder="اكتب تعريفاً مفصلاً يظهر داخل صفحة القسم..."></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">أيقونة القسم (FontAwesome)</label>
+                    <input asp-for="IconClass" class="cf-input" placeholder="مثال: fas fa-leaf" dir="ltr" />
+                </div>
+
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">الصورة البارزة (ملف من الجهاز)</label>
+                    <!-- حقل رفع الملفات -->
+                    <input type="file" name="ImageFile" accept="image/*" class="cf-input p-2" />
+                    <p class="text-xs text-brk-400 mt-2"><i class="fas fa-info-circle text-gld-500"></i> سيتم رفع الصورة وحفظها كملف في الخادم.</p>
+                </div>
+            </div>
+
+            <div class="cf-group mb-8">
+                <label class="cf-check-wrap font-bold text-pri-900">
+                    <input asp-for="IsActive" type="checkbox" class="cf-check" checked /> القسم مفعل ويظهر للزوار
+                </label>
+            </div>
+
+            <button type="submit" class="cf-btn cf-btn-pri cf-btn-lg w-full md:w-auto">
+                <i class="fas fa-save"></i> حفظ القسم
+            </button>
+        </form>
+    </div>
+</div>

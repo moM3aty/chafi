@@ -1,0 +1,83 @@
+﻿<!-- مسار الملف: Views/Admin/CreateAdvertisement.cshtml -->
+@model Chafi.Models.Advertisement
+@{
+    ViewData["Title"] = "إضافة إعلان جديد";
+}
+
+<div class="max-w-4xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-plus-square text-gld-500 ml-2"></i>إضافة إعلان</h1>
+        <a href="@Url.Action("Advertisements")" class="cf-btn cf-btn-out cf-btn-sm text-xs">
+            <i class="fas fa-arrow-right"></i> العودة للإعلانات
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl border-2 border-border p-6 sm:p-10 shadow-sm">
+        <form asp-action="CreateAdvertisement" method="post" enctype="multipart/form-data">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">عنوان الإعلان <span class="req">*</span></label>
+                    <input asp-for="Title" class="cf-input" required />
+                    <span asp-validation-for="Title" class="text-xs text-red-500 mt-1 block"></span>
+                </div>
+
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">العنوان الفرعي</label>
+                    <input asp-for="Subtitle" class="cf-input" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">موضع الإعلان <span class="req">*</span></label>
+                    <select asp-for="Position" class="cf-select" required>
+                        <option value="0">سلايدر رئيسي (Hero Slider)</option>
+                        <option value="1">بانر علوي (Top Banner)</option>
+                        <option value="2">شريط جانبي (Side Bar)</option>
+                        <option value="3">نافذة منبثقة (Popup)</option>
+                        <option value="4">بانر أسفل (Footer Banner)</option>
+                        <option value="5">بانر داخل القسم (Category Banner)</option>
+                    </select>
+                </div>
+
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">رابط الإعلان (عند النقر)</label>
+                    <input asp-for="LinkUrl" type="url" class="cf-input" dir="ltr" placeholder="https://..." />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">تاريخ البداية <span class="req">*</span></label>
+                    <input asp-for="StartDate" type="datetime-local" class="cf-input" required />
+                    <span asp-validation-for="StartDate" class="text-xs text-red-500 mt-1 block"></span>
+                </div>
+
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">تاريخ النهاية (اختياري)</label>
+                    <input asp-for="EndDate" type="datetime-local" class="cf-input" />
+                </div>
+            </div>
+
+            <div class="cf-group mb-8">
+                <label class="cf-label">صورة الإعلان (ملف من الجهاز) <span class="req">*</span></label>
+                <input type="file" name="ImageFile" accept="image/*" class="cf-input p-2" required />
+                <p class="text-[11px] text-brk-400 mt-1">يرجى اختيار صورة بأبعاد مناسبة لموضع الإعلان.</p>
+            </div>
+
+            <div class="flex gap-6 mb-8 border-t border-gray-100 pt-6">
+                <label class="cf-check-wrap font-bold text-pri-900 cursor-pointer">
+                    <input asp-for="IsActive" type="checkbox" class="cf-check" checked /> الإعلان مفعل
+                </label>
+                <label class="cf-check-wrap font-bold text-brk-600 cursor-pointer">
+                    <input asp-for="OpenInNewTab" type="checkbox" class="cf-check" checked /> فتح الرابط في نافذة جديدة
+                </label>
+            </div>
+
+            <button type="submit" class="cf-btn cf-btn-gld cf-btn-lg w-full md:w-auto">
+                <i class="fas fa-upload"></i> رفع وحفظ الإعلان
+            </button>
+        </form>
+    </div>
+</div>

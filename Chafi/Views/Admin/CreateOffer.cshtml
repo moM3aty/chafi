@@ -1,0 +1,71 @@
+﻿<!-- مسار الملف: Views/Admin/CreateOffer.cshtml -->
+@model Chafi.Models.Offer
+@{
+    ViewData["Title"] = "إضافة عرض جديد";
+}
+
+<div class="max-w-4xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-tags text-gld-500 ml-2"></i>إضافة عرض أو كود خصم</h1>
+        <a href="@Url.Action("Offers")" class="cf-btn cf-btn-out cf-btn-sm text-xs">
+            <i class="fas fa-arrow-right"></i> العودة للعروض
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl border-2 border-border p-6 sm:p-10 shadow-sm">
+        <form asp-action="CreateOffer" method="post" enctype="multipart/form-data">
+
+            <div class="cf-group mb-6">
+                <label class="cf-label">عنوان العرض <span class="req">*</span></label>
+                <input asp-for="Title" class="cf-input" placeholder="مثال: خصم الشتاء 20%" required />
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">نوع الخصم <span class="req">*</span></label>
+                    <select asp-for="DiscountType" class="cf-select" required>
+                        <option value="0">نسبة مئوية (%)</option>
+                        <option value="1">مبلغ ثابت (ر.س)</option>
+                    </select>
+                </div>
+
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">قيمة الخصم <span class="req">*</span></label>
+                    <input asp-for="DiscountValue" type="number" step="0.01" class="cf-input" required />
+                </div>
+
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">كوبون الخصم (اختياري)</label>
+                    <input asp-for="CouponCode" class="cf-input" dir="ltr" placeholder="مثال: WINTER20" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">تاريخ بداية العرض <span class="req">*</span></label>
+                    <input asp-for="StartDate" type="datetime-local" class="cf-input" required />
+                </div>
+
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">تاريخ نهاية العرض <span class="req">*</span></label>
+                    <input asp-for="EndDate" type="datetime-local" class="cf-input" required />
+                </div>
+            </div>
+
+            <div class="cf-group mb-8">
+                <label class="cf-label">صورة إعلانية للعرض (اختياري)</label>
+                <input type="file" name="ImageFile" accept="image/*" class="cf-input p-2" />
+            </div>
+
+            <div class="flex gap-6 mb-8 border-t border-gray-100 pt-6">
+                <label class="cf-check-wrap font-bold text-pri-900">
+                    <input asp-for="IsActive" type="checkbox" class="cf-check" checked /> تفعيل العرض الآن
+                </label>
+            </div>
+
+            <button type="submit" class="cf-btn cf-btn-gld cf-btn-lg w-full md:w-auto">
+                <i class="fas fa-check"></i> حفظ وإنشاء العرض
+            </button>
+        </form>
+    </div>
+</div>

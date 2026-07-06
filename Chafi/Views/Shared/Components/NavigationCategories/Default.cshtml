@@ -1,0 +1,13 @@
+﻿@model IEnumerable<Chafi.Models.Category>
+
+<!-- هذا الملف يعرض الأقسام ديناميكياً أسفل الهيدر الرئيسي -->
+<a href="@Url.Action("Index", "Home")" class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-white/60 hover:text-white hover:bg-white/8 transition whitespace-nowrap text-xs font-medium no-underline">
+    <i class="fas fa-home text-gld-400 text-[10px]"></i>الرئيسية
+</a>
+
+@foreach (var category in Model)
+{
+    <a href="@Url.Action("Details", "Category", new { id = category.Id, slug = category.Slug })" class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-white/60 hover:text-white hover:bg-white/8 transition whitespace-nowrap text-xs font-medium no-underline">
+        <i class="@(category.IconClass ?? "fas fa-folder") text-gld-400 text-[10px]"></i>@category.Name
+    </a>
+}

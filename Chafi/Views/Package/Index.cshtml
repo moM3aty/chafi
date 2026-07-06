@@ -1,0 +1,53 @@
+﻿<!-- مسار الملف: Views/Package/Index.cshtml -->
+@model IEnumerable<Chafi.Models.Package>
+@{
+    ViewData["Title"] = "الباقات المميزة";
+}
+
+<div class="max-w-7xl mx-auto px-4 py-12 mb-14">
+    <div class="text-center mb-12 afiu">
+        <h1 class="text-3xl sm:text-4xl font-black text-pri-900 font-amiri mb-4">الباقات المميزة</h1>
+        <div class="orn"><div class="orn-ln"></div><div class="orn-dm"></div><div class="orn-ln"></div></div>
+        <p class="text-brk-500 text-base max-w-lg mx-auto">مجموعات متكاملة من منتجات الرقية الشرعية بأسعار مخفضة وتوفير كبير.</p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="bg-white rounded-3xl border-2 border-border p-12 text-center shadow-sm afiu" style="animation-delay: 0.2s">
+            <i class="fas fa-boxes text-6xl text-brk-300 mb-4 opacity-50"></i>
+            <h3 class="text-xl font-bold text-pri-900 mb-2">لا توجد باقات حالياً</h3>
+            <p class="text-brk-400">نعمل على تجهيز باقات جديدة قريباً، تفضل بزيارة هذه الصفحة لاحقاً.</p>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            @foreach (var p in Model)
+            {
+                <div class="pkg-card @(p.IsFeatured ? "feat" : "") afiu">
+                    @if (p.IsFeatured)
+                    {
+                        <div class="pkg-feat-badge">الأكثر طلباً</div>
+                    }
+                    <div class="pkg-hd">
+                        <img src="@(p.ImageUrl ?? "https://picsum.photos/400")" alt="@p.Name" class="w-24 h-24 rounded-2xl mx-auto mb-4 object-cover @(p.IsFeatured ? "" : "border-2 border-gray-100")" loading="lazy">
+                        <h3 class="text-xl font-black @(p.IsFeatured ? "text-white" : "text-pri-900")">@p.Name</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center justify-center gap-3 mb-4">
+                            <span class="pkg-save"><i class="fas fa-bolt text-[10px]"></i> وفّر @p.SavingsPercentage%</span>
+                            <span class="line-through text-brk-300 text-sm">@p.OriginalTotalPrice ر.س</span>
+                        </div>
+                        <div class="text-center mb-6">
+                            <span class="text-4xl font-black text-pri-700">@p.PackagePrice</span>
+                            <span class="text-brk-400 text-sm mr-1">ر.س</span>
+                        </div>
+                        <a href="@Url.Action("Details", "Package", new { id = p.Id })" class="cf-btn @(p.IsFeatured ? "cf-btn-gld" : "cf-btn-pri") cf-btn-full">
+                            تفاصيل الباقة <i class="fas fa-arrow-left text-xs mr-1"></i>
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

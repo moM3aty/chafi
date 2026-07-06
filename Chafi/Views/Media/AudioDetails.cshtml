@@ -1,0 +1,66 @@
+﻿<!-- مسار الملف: Views/Media/AudioDetails.cshtml -->
+@model Chafi.Models.Audio
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <!-- مسار التنقل -->
+    <div class="flex items-center gap-2 text-sm text-brk-400 mb-8">
+        <a href="@Url.Action("Index", "Home")" class="hover:text-pri-600 transition"><i class="fas fa-home"></i> الرئيسية</a>
+        <i class="fas fa-chevron-left text-[10px]"></i>
+        <a href="@Url.Action("Details", "Category", new { id = Model.CategoryId })" class="hover:text-pri-600 transition">@Model.Category.Name</a>
+        <i class="fas fa-chevron-left text-[10px]"></i>
+        <span class="text-pri-900 font-bold truncate">@Model.Title</span>
+    </div>
+
+    <div class="bg-white rounded-3xl border-2 border-border p-6 sm:p-10 flex flex-col lg:flex-row gap-10 items-center">
+        <!-- أيقونة الصوتيات -->
+        <div class="w-full lg:w-1/3 shrink-0 flex justify-center">
+            <div class="w-48 h-48 rounded-full bg-gradient-to-br from-pri-500 to-pri-800 flex items-center justify-center text-gld-400 text-6xl shadow-2xl relative">
+                <i class="fas fa-headphones-alt"></i>
+                <div class="absolute -bottom-4 -right-4 w-16 h-16 bg-white rounded-full flex items-center justify-center text-2xl text-pri-600 border-4 border-white shadow-lg">
+                    <i class="fas fa-play"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- التفاصيل ومعلومات الشراء -->
+        <div class="w-full lg:w-2/3 flex flex-col">
+            <h1 class="text-3xl sm:text-4xl font-black text-pri-900 font-amiri mb-3 leading-tight">@Model.Title</h1>
+
+            <div class="flex flex-wrap items-center gap-4 mb-6 pb-6 border-b border-gray-100 text-brk-500 text-sm">
+                <span><i class="fas fa-user-circle text-gld-500 ml-1"></i> @Model.Narrator</span>
+                <span class="text-gray-300">|</span>
+                <span><i class="fas fa-clock text-gld-500 ml-1"></i> @Model.FormattedDuration دقيقة</span>
+                <span class="text-gray-300">|</span>
+                <span><i class="fas fa-headphones text-gld-500 ml-1"></i> @Model.ListenCount استماع</span>
+            </div>
+
+            <div class="flex items-end gap-3 mb-6">
+                <span class="text-4xl font-black text-pri-700">@Model.Price <span class="text-lg font-bold">ر.س</span></span>
+                <span class="text-sm text-gld-600 bg-gld-50 px-3 py-1 rounded-lg">منتج رقمي حصري</span>
+            </div>
+
+            <div class="prose prose-sm text-brk-500 leading-relaxed mb-8">
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    @Html.Raw(Model.Description.Replace("\n", "<br/>"))
+                }
+                else
+                {
+                    <p>مقطع صوتي عالي الجودة للرقية الشرعية، يمكنك الاستماع إليه وتنزيله بعد إتمام عملية الشراء.</p>
+                }
+            </div>
+
+            <div class="mt-auto flex flex-wrap gap-4">
+                <form asp-controller="Cart" asp-action="AddToCart" method="post" class="flex-1">
+                    <input type="hidden" name="audioId" value="@Model.Id" />
+                    <button type="submit" class="cf-btn cf-btn-pri w-full h-14 text-lg">
+                        <i class="fas fa-cart-plus"></i> شراء المقطع الصوتي
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

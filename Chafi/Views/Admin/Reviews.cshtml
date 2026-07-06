@@ -1,0 +1,85 @@
+﻿<!-- مسار الملف: Views/Admin/Reviews.cshtml -->
+@model IEnumerable<Chafi.Models.Review>
+@{
+    ViewData["Title"] = "إدارة التقييمات";
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-star-half-alt text-gld-500 ml-2"></i>آراء العملاء والتقييمات</h1>
+    </div>
+
+    <div class="bg-white rounded-2xl border-2 border-border overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100 text-brk-500">
+                    <tr>
+                        <th class="p-4 font-bold">المنتج</th>
+                        <th class="p-4 font-bold">العميل</th>
+                        <th class="p-4 font-bold text-center">التقييم</th>
+                        <th class="p-4 font-bold">التعليق</th>
+                        <th class="p-4 font-bold text-center">الحالة</th>
+                        <th class="p-4 font-bold text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                                <td class="p-4 font-bold text-pri-900">
+                                    <a href="@Url.Action("Details", "Product", new { id = item.ProductId })" target="_blank" class="hover:text-gld-600 transition">@item.Product?.Name</a>
+                                </td>
+                                <td class="p-4 text-brk-500">@item.User?.FullName</td>
+                                <td class="p-4 text-center text-gld-500">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        if (i <= item.Rating)
+                                        {
+                                            <i class="fas fa-star"></i>
+                                        }
+                                        else
+                                        {
+
+                                            <i class="fas fa-star text-gray-300"></i>
+                                        }
+                                    }
+                                </td>
+                                <td class="p-4 text-brk-500 max-w-xs truncate" title="@item.Comment">@item.Comment</td>
+                                <td class="p-4 text-center">
+                                    @if (item.IsApproved)
+                                    {
+                                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">معتمد</span>
+                                    }
+                                    else
+                                    {
+
+                                        <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs">قيد المراجعة</span>
+                                    }
+                                </td>
+                                <td class="p-4 flex justify-center gap-2">
+                                    @if (!item.IsApproved)
+                                    {
+                                        <form asp-action="ApproveReview" method="post">
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="w-8 h-8 rounded bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition flex items-center justify-center" title="اعتماد وإظهار"><i class="fas fa-check"></i></button>
+                                        </form>
+                                    }
+                                    <form asp-action="DeleteReview" method="post" onsubmit="return confirm('هل أنت متأكد من حذف هذا التقييم؟');">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="w-8 h-8 rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition flex items-center justify-center" title="حذف"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6" class="p-8 text-center text-brk-400">لا توجد تقييمات حتى الآن</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

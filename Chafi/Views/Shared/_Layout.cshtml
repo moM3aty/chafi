@@ -1,0 +1,241 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - تشافي للرقية الشرعية</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pri: { 50:'#eef5ef',100:'#d4e6d6',200:'#a9ccae',300:'#72a87a',400:'#3f834d',500:'#1f6e33',600:'#1a582a',700:'#154622',800:'#12381d',900:'#0e2f18',DEFAULT:'#1a582a'},
+                        gld: { 50:'#fdf9ed',100:'#faf0c8',200:'#f5e08c',300:'#edcb50',400:'#e4b629',500:'#c8a020',600:'#a67d18',700:'#855d16',800:'#6e4b18',900:'#5c3f18',DEFAULT:'#c8a020'},
+                        brk: { 50:'#f8f6f4',100:'#ede8e2',200:'#dad1c5',300:'#c2b3a0',400:'#a89279',500:'#967c64',600:'#836753',700:'#6c5345',800:'#5a463c',900:'#4c3c34',DEFAULT:'#5a463c'}
+                    },
+                    fontFamily: { cairo:['Cairo','sans-serif'], amiri:['Amiri','serif'] }
+                }
+            }
+        }
+    </script>
+    
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @RenderSection("Styles", required: false)
+</head>
+<body class="flex flex-col min-h-screen">
+    <div class="islamic-bg"></div>
+
+    <!-- ================= HEADER ================= -->
+    <header class="main-header" id="mainHeader">
+        <div class="top-strip">
+            <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between text-white/70 text-xs sm:text-sm font-medium">
+                <div class="flex items-center gap-5">
+                    <span class="hover:text-gld-400 transition cursor-pointer"><i class="fas fa-phone-alt ml-1.5 text-gld-400"></i> +966 50 000 0000</span>
+                    <span class="hidden sm:inline hover:text-gld-400 transition cursor-pointer"><i class="fas fa-envelope ml-1.5 text-gld-400"></i> info@tashafi.net</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="hidden md:inline font-light tracking-wide text-white/50">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</span>
+                    <span class="text-gld-400 font-amiri text-lg">﷽</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-6">
+            <a href="@Url.Action("Index", "Home")" class="flex items-center gap-3 text-white no-underline shrink-0 group">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gld-400 to-gld-600 flex items-center justify-center text-pri-900 text-xl font-black shadow-[0_0_15px_rgba(200,160,32,0.4)] group-hover:scale-105 transition-transform">ت</div>
+                <div>
+                    <div class="text-2xl font-black leading-none tracking-tight font-amiri">تشافي</div>
+                    <div class="text-[11px] text-gld-200/80 font-medium tracking-widest uppercase mt-1">Tashafi Store</div>
+                </div>
+            </a>
+            
+            <div class="flex-1 max-w-2xl hidden lg:block">
+                <form asp-controller="Search" asp-action="Index" method="get" class="relative group">
+                    <input type="text" name="q" placeholder="ابحث عن منتجات، باقات، فيديوهات..." class="w-full py-3 px-6 pr-12 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/50 font-cairo text-sm outline-none focus:bg-white/20 focus:border-gld-400/50 focus:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all backdrop-blur-md">
+                    <button type="submit" class="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-white/50 group-hover:text-gld-400 transition-colors"><i class="fas fa-search text-base"></i></button>
+                </form>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <a href="@Url.Action("Index", "Wishlist")" class="relative w-11 h-11 rounded-xl bg-white/5 text-white/90 flex items-center justify-center hover:bg-white/15 hover:text-gld-400 transition-all border border-white/10 shadow-sm">
+                    <i class="fas fa-heart text-lg"></i>
+                    <span class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow-md border-2 border-pri-900" id="wCount">0</span>
+                </a>
+                <a href="@Url.Action("Index", "Cart")" class="relative w-11 h-11 rounded-xl bg-white/5 text-white/90 flex items-center justify-center hover:bg-white/15 hover:text-gld-400 transition-all border border-white/10 shadow-sm">
+                    <i class="fas fa-shopping-cart text-lg"></i>
+                    <span class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gld-500 text-pri-900 text-[10px] font-black flex items-center justify-center shadow-md border-2 border-pri-900" id="cCount">0</span>
+                </a>
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <a href="@Url.Action("Dashboard", "User")" class="hidden sm:flex items-center gap-2 py-2.5 px-5 rounded-xl bg-gradient-to-r from-pri-500 to-pri-600 text-white text-sm font-bold hover:shadow-lg hover:shadow-pri-500/30 transition-all border border-pri-400">
+                        <i class="fas fa-user-circle text-base"></i><span>حسابي</span>
+                    </a>
+                }
+                else
+                {
+                    <button onclick="openMdl('authMdl')" class="hidden sm:flex items-center gap-2 py-2.5 px-5 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-all border border-white/20 backdrop-blur-sm">
+                        <i class="fas fa-sign-in-alt text-base text-gld-400"></i><span>دخول / تسجيل</span>
+                    </button>
+                }
+            </div>
+        </nav>
+        
+        <div class="border-t border-white/10 bg-black/10 backdrop-blur-md">
+            <div class="max-w-7xl mx-auto px-4 flex items-center gap-2 overflow-x-auto py-2.5 text-sm no-sb">
+                @await Component.InvokeAsync("NavigationCategories")
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="flex-1 relative z-10 w-full" id="app">
+        @RenderBody()
+    </main>
+
+    <!-- ================= MEGA FOOTER ================= -->
+    <footer class="mt-auto relative z-20 overflow-hidden bg-pri-900 text-white/70 border-t-[6px] border-gld-500">
+        <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(var(--gld) 1px, transparent 1px); background-size: 30px 30px;"></div>
+        <div class="max-w-7xl mx-auto px-4 py-16 relative z-10">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12 border-b border-white/10 pb-12">
+                
+                <div class="col-span-1 lg:col-span-1">
+                    <a href="#" class="flex items-center gap-3 text-white no-underline mb-6">
+                        <div class="w-10 h-10 rounded-lg bg-gld-500 flex items-center justify-center text-pri-900 text-lg font-black">ت</div>
+                        <div class="text-2xl font-black font-amiri tracking-wide">تشافي</div>
+                    </a>
+                    <p class="text-sm leading-relaxed mb-6">مؤسسة تشافي للرقية الشرعية تقدم لكم أفضل المنتجات الطبيعية والصوتيات المتخصصة الموثوقة بإذن الله، تحت إشراف نخبة من المتخصصين.</p>
+                    <div class="flex gap-3">
+                        <a href="#" class="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center hover:bg-gld-500 hover:text-pri-900 transition-colors"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center hover:bg-gld-500 hover:text-pri-900 transition-colors"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center hover:bg-gld-500 hover:text-pri-900 transition-colors"><i class="fab fa-youtube"></i></a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center hover:bg-gld-500 hover:text-pri-900 transition-colors"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold text-lg mb-6 flex items-center gap-2"><i class="fas fa-link text-gld-500"></i> روابط سريعة</h4>
+                    <ul class="space-y-3 text-sm">
+                        <li><a href="@Url.Action("Index", "Home")" class="hover:text-gld-400 transition flex items-center gap-2"><i class="fas fa-angle-left text-[10px]"></i> الرئيسية</a></li>
+                        <li><a href="@Url.Action("Index", "Product")" class="hover:text-gld-400 transition flex items-center gap-2"><i class="fas fa-angle-left text-[10px]"></i> المتجر والمنتجات</a></li>
+                        <li><a href="@Url.Action("Index", "Package")" class="hover:text-gld-400 transition flex items-center gap-2"><i class="fas fa-angle-left text-[10px]"></i> الباقات المميزة</a></li>
+                        <li><a href="@Url.Action("Index", "Contact")" class="hover:text-gld-400 transition flex items-center gap-2"><i class="fas fa-angle-left text-[10px]"></i> تواصل معنا</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold text-lg mb-6 flex items-center gap-2"><i class="fas fa-hands-helping text-gld-500"></i> الدعم والمساعدة</h4>
+                    <ul class="space-y-3 text-sm">
+                        <li><a href="#" class="hover:text-gld-400 transition flex items-center gap-2"><i class="fas fa-angle-left text-[10px]"></i> الشروط والأحكام</a></li>
+                        <li><a href="#" class="hover:text-gld-400 transition flex items-center gap-2"><i class="fas fa-angle-left text-[10px]"></i> سياسة الخصوصية</a></li>
+                        <li><a href="#" class="hover:text-gld-400 transition flex items-center gap-2"><i class="fas fa-angle-left text-[10px]"></i> سياسة الاسترجاع</a></li>
+                        <li><a href="#" class="hover:text-gld-400 transition flex items-center gap-2"><i class="fas fa-angle-left text-[10px]"></i> الأسئلة الشائعة</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold text-lg mb-6 flex items-center gap-2"><i class="fas fa-map-marker-alt text-gld-500"></i> تواصل معنا</h4>
+                    <ul class="space-y-4 text-sm">
+                        <li class="flex items-start gap-3"><i class="fas fa-map-pin mt-1 text-gld-500"></i> <span>المملكة العربية السعودية<br>الرياض، حي الياسمين</span></li>
+                        <li class="flex items-center gap-3"><i class="fas fa-phone mt-0.5 text-gld-500"></i> <span dir="ltr">+966 50 000 0000</span></li>
+                        <li class="flex items-center gap-3"><i class="fas fa-envelope mt-0.5 text-gld-500"></i> <span>info@tashafi.net</span></li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
+                <div>جميع الحقوق محفوظة لمنصة تشافي &copy; @DateTime.Now.Year</div>
+                <div class="flex gap-4 items-center opacity-60">
+                    <i class="fab fa-cc-visa text-3xl"></i>
+                    <i class="fab fa-cc-mastercard text-3xl"></i>
+                    <i class="fab fa-apple-pay text-3xl"></i>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ================= AUTH MODAL ================= -->
+    <div id="authMdl" class="mdl-ov">
+        <div class="mdl-box">
+            <button onclick="closeMdl('authMdl')" class="mdl-x"><i class="fas fa-times"></i></button>
+            <div class="mdl-hd">
+                <div class="w-14 h-14 bg-gld-50 text-gld-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4"><i class="fas fa-user-lock"></i></div>
+                <h2 id="authTitle" class="text-2xl font-black text-pri-900 font-amiri">تسجيل الدخول</h2>
+                <p id="authSub" class="text-sm text-brk-400 mt-1">مرحباً بك مجدداً في تشافي</p>
+            </div>
+            <div class="mdl-bd">
+                <!-- فورم تسجيل الدخول -->
+                <form id="loginF" onsubmit="doLogin(event)" class="space-y-5">
+                    <div class="cf-group">
+                        <label class="cf-label">البريد الإلكتروني <span class="req">*</span></label>
+                        <input type="email" class="cf-input" placeholder="example@domain.com" required>
+                        <i class="fas fa-envelope cf-icon"></i>
+                    </div>
+                    <div class="cf-group">
+                        <label class="cf-label">كلمة المرور <span class="req">*</span></label>
+                        <input type="password" id="loginPw" class="cf-input" placeholder="••••••••" required>
+                        <i class="fas fa-lock cf-icon"></i>
+                        <button type="button" class="cf-toggle-pw" onclick="togPw('loginPw', this)"><i class="fas fa-eye"></i></button>
+                    </div>
+                    <button type="submit" class="cf-btn cf-btn-pri cf-btn-full cf-btn-lg shadow-lg"><i class="fas fa-sign-in-alt"></i> دخول لحسابي</button>
+                </form>
+
+                <!-- فورم إنشاء الحساب -->
+                <form id="regF" onsubmit="doReg(event)" class="space-y-4 hidden">
+                    <div class="cf-group">
+                        <label class="cf-label">الاسم الكامل <span class="req">*</span></label>
+                        <input type="text" id="regName" class="cf-input" placeholder="الاسم ثلاثي" required>
+                        <i class="fas fa-user cf-icon"></i>
+                    </div>
+                    <div class="cf-group">
+                        <label class="cf-label">البريد الإلكتروني <span class="req">*</span></label>
+                        <input type="email" id="regEmail" class="cf-input" placeholder="example@domain.com" required>
+                        <i class="fas fa-envelope cf-icon"></i>
+                    </div>
+                    <div class="cf-group">
+                        <label class="cf-label">رقم الهاتف <span class="req">*</span></label>
+                        <input type="tel" id="regPhone" class="cf-input" placeholder="05XXXXXXXX" required>
+                        <i class="fas fa-phone cf-icon"></i>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="cf-group">
+                            <label class="cf-label">كلمة المرور <span class="req">*</span></label>
+                            <input type="password" id="regPw" class="cf-input" required>
+                        </div>
+                        <div class="cf-group">
+                            <label class="cf-label">تأكيد المرور <span class="req">*</span></label>
+                            <input type="password" id="regPw2" class="cf-input" required>
+                        </div>
+                    </div>
+                    <div class="cf-group pt-2">
+                        <label class="cf-check-wrap font-bold text-xs text-brk-500">
+                            <input type="checkbox" id="regTerms" class="cf-check">
+                            <span>أوافق على سياسة الخصوصية والشروط</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="cf-btn cf-btn-gld cf-btn-full cf-btn-lg shadow-lg"><i class="fas fa-user-plus"></i> إنشاء حساب جديد</button>
+                </form>
+
+                <div class="mt-6 text-center text-sm border-t border-gray-100 pt-5 bg-gray-50 -mx-6 -mb-6 pb-6 rounded-b-2xl">
+                    <span id="authSwTxt" class="text-brk-400">ليس لديك حساب؟</span>
+                    <button id="authSwBtn" onclick="togAuth()" type="button" class="text-pri-600 font-bold hover:text-pri-800 transition focus:outline-none mr-1">سجل الآن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TOASTS ================= -->
+    <div id="toastC" class="toast-c"></div>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

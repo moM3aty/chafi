@@ -1,0 +1,68 @@
+﻿@model IEnumerable<Chafi.Models.ApplicationUser>
+@{
+    ViewData["Title"] = "إدارة الصلاحيات";
+    var userRoles = ViewBag.UserRoles as Dictionary<string, IList<string>>;
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-user-shield text-gld-500 ml-2"></i>إدارة الصلاحيات والمستخدمين</h1>
+        <a href="@Url.Action("SiteSettings", "Admin")" class="cf-btn cf-btn-out cf-btn-sm text-xs">
+            <i class="fas fa-arrow-right"></i> العودة للإعدادات
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl border-2 border-border overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100 text-brk-500">
+                    <tr>
+                        <th class="p-4 font-bold">المستخدم</th>
+                        <th class="p-4 font-bold">البريد الإلكتروني</th>
+                        <th class="p-4 font-bold">الصلاحيات الحالية</th>
+                        <th class="p-4 font-bold text-center">إضافة صلاحية</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var user in Model)
+                        {
+                            <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                                <td class="p-4 font-bold text-pri-900">@user.FullName</td>
+                                <td class="p-4 text-brk-500" dir="ltr">@user.Email</td>
+                                <td class="p-4">
+                                    @if (userRoles != null && userRoles.ContainsKey(user.Id))
+                                    {
+                                        foreach (var role in userRoles[user.Id])
+                                        {
+                                            <span class="bg-gld-100 text-gld-700 px-2 py-1 rounded text-xs ml-1 font-bold">@role</span>
+                                        }
+                                        if (!userRoles[user.Id].Any())
+                                        {
+                                            <span class="text-xs text-brk-300">مستخدم عادي</span>
+                                        }
+                                    }
+                                </td>
+                                <td class="p-4">
+                                    <form asp-action="AssignRole" method="post" class="flex justify-center gap-2">
+                                        <input type="hidden" name="userId" value="@user.Id" />
+                                        <select name="roleName" class="cf-select !py-1 !pl-2 !pr-8 text-xs w-auto">
+                                            <option value="Admin">مدير (Admin)</option>
+                                            <option value="SuperAdmin">مدير عام (SuperAdmin)</option>
+                                        </select>
+                                        <button type="submit" class="cf-btn cf-btn-pri !py-1 !px-3 text-xs">ترقية</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="4" class="p-8 text-center text-brk-400">لا يوجد مستخدمين مسجلين</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

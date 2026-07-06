@@ -1,0 +1,107 @@
+﻿<!-- مسار الملف: Views/Contact/Index.cshtml -->
+@{
+    ViewData["Title"] = "تواصل معنا";
+}
+
+<div class="max-w-7xl mx-auto px-4 py-12 mb-14">
+    <div class="text-center mb-12 afiu">
+        <h1 class="text-3xl sm:text-4xl font-black text-pri-900 font-amiri mb-4">تواصل معنا</h1>
+        <div class="orn"><div class="orn-ln"></div><div class="orn-dm"></div><div class="orn-ln"></div></div>
+        <p class="text-brk-500 text-base max-w-lg mx-auto">نحن هنا لخدمتك والإجابة على جميع استفساراتك. لا تتردد في مراسلتنا.</p>
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-10">
+        <!-- معلومات التواصل -->
+        <div class="w-full md:w-1/3 space-y-6 afiu" style="animation-delay: 0.1s">
+            <div class="bg-white rounded-2xl p-6 border-2 border-border shadow-sm flex items-start gap-4 hover:border-pri-300 transition">
+                <div class="w-12 h-12 rounded-full bg-pri-50 text-pri-600 flex items-center justify-center text-xl shrink-0"><i class="fas fa-map-marker-alt"></i></div>
+                <div>
+                    <h4 class="font-bold text-pri-900 mb-1">العنوان</h4>
+                    <p class="text-sm text-brk-500">المملكة العربية السعودية، الرياض، حي الياسمين</p>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl p-6 border-2 border-border shadow-sm flex items-start gap-4 hover:border-gld-300 transition">
+                <div class="w-12 h-12 rounded-full bg-gld-50 text-gld-600 flex items-center justify-center text-xl shrink-0"><i class="fas fa-phone-alt"></i></div>
+                <div>
+                    <h4 class="font-bold text-pri-900 mb-1">رقم الهاتف</h4>
+                    <p class="text-sm text-brk-500" dir="ltr">+966 XX XXX XXXX</p>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl p-6 border-2 border-border shadow-sm flex items-start gap-4 hover:border-blue-300 transition">
+                <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0"><i class="fas fa-envelope"></i></div>
+                <div>
+                    <h4 class="font-bold text-pri-900 mb-1">البريد الإلكتروني</h4>
+                    <p class="text-sm text-brk-500">info@chafi.com</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- نموذج المراسلة -->
+        <div class="w-full md:w-2/3 bg-white rounded-3xl border-2 border-border p-8 shadow-sm afiu" style="animation-delay: 0.2s">
+            <form id="contactPageForm" onsubmit="submitContactForm(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="cf-group !mb-0">
+                        <label class="cf-label">الاسم الكامل <span class="req">*</span></label>
+                        <input type="text" id="cpName" class="cf-input" required>
+                    </div>
+                    <div class="cf-group !mb-0">
+                        <label class="cf-label">رقم الهاتف</label>
+                        <input type="tel" id="cpPhone" class="cf-input" dir="ltr" placeholder="05XXXXXXXX">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="cf-group !mb-0">
+                        <label class="cf-label">البريد الإلكتروني <span class="req">*</span></label>
+                        <input type="email" id="cpEmail" class="cf-input" required dir="ltr">
+                    </div>
+                    <div class="cf-group !mb-0">
+                        <label class="cf-label">الموضوع <span class="req">*</span></label>
+                        <select id="cpSubject" class="cf-select" required>
+                            <option value="">اختر الموضوع...</option>
+                            <option value="استفسار">استفسار عام عن الرقية</option>
+                            <option value="مشكلة">مشكلة في الطلب</option>
+                            <option value="اقتراح">اقتراح أو ملاحظة</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="cf-group mb-8">
+                    <label class="cf-label">الرسالة <span class="req">*</span></label>
+                    <textarea id="cpMessage" class="cf-textarea" rows="5" required placeholder="اكتب تفاصيل رسالتك هنا..."></textarea>
+                </div>
+                <button type="submit" class="cf-btn cf-btn-pri cf-btn-lg"><i class="fas fa-paper-plane"></i> إرسال الرسالة</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function submitContactForm(e) {
+            e.preventDefault();
+            const data = {
+                Name: document.getElementById('cpName').value,
+                Phone: document.getElementById('cpPhone').value,
+                Email: document.getElementById('cpEmail').value,
+                Subject: document.getElementById('cpSubject').value,
+                Message: document.getElementById('cpMessage').value
+            };
+
+            try {
+                const res = await fetch('@Url.Action("SubmitMessage", "Contact")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if(result.success) {
+                    showToast(result.message, 'ok');
+                    document.getElementById('contactPageForm').reset();
+                } else {
+                    showToast(result.message, 'err');
+                }
+            } catch (err) {
+                showToast('حدث خطأ أثناء الاتصال بالخادم', 'err');
+            }
+        }
+    </script>
+}

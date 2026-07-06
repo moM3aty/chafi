@@ -1,0 +1,53 @@
+﻿<!-- مسار الملف: Views/Admin/ReadMessage.cshtml -->
+@model Chafi.Models.ContactMessage
+@{
+    ViewData["Title"] = "قراءة الرسالة";
+}
+
+<div class="max-w-4xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-envelope-open text-gld-500 ml-2"></i>تفاصيل الرسالة</h1>
+        <a href="@Url.Action("Messages", "Admin")" class="cf-btn cf-btn-out cf-btn-sm text-xs">
+            <i class="fas fa-arrow-right"></i> العودة للرسائل
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl border-2 border-border p-6 sm:p-10 shadow-sm">
+
+        <div class="flex flex-col sm:flex-row justify-between items-start border-b border-gray-100 pb-6 mb-6 gap-4">
+            <div>
+                <h2 class="text-xl font-bold text-pri-900 mb-1">@Model.Subject</h2>
+                <div class="text-sm text-brk-400">
+                    <span>من: <strong class="text-pri-700">@Model.Name</strong></span>
+                    <span class="mx-2">|</span>
+                    <span dir="ltr">@Model.Email</span>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Phone))
+                {
+                    <div class="text-sm text-brk-400 mt-1">رقم الهاتف: <span dir="ltr" class="font-bold">@Model.Phone</span></div>
+                }
+            </div>
+            <div class="text-xs text-brk-300 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 whitespace-nowrap">
+                <i class="fas fa-clock ml-1"></i> @Model.CreatedAtFormatted
+            </div>
+        </div>
+
+        <div class="min-h-[200px] text-brk-500 leading-loose text-base bg-gray-50 p-6 rounded-2xl border border-gray-100 mb-8 whitespace-pre-line">
+            @Model.Message
+        </div>
+
+        <div class="flex flex-wrap gap-4 border-t border-gray-100 pt-6">
+            <a href="mailto:@Model.Email?subject=رد من متجر تشافي: @Model.Subject" class="cf-btn cf-btn-pri">
+                <i class="fas fa-reply"></i> الرد عبر البريد
+            </a>
+
+            <form asp-action="DeleteMessage" asp-controller="Admin" method="post" onsubmit="return confirm('هل أنت متأكد من حذف هذه الرسالة؟');">
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="cf-btn !bg-red-50 !text-red-600 hover:!bg-red-600 hover:!text-white border border-red-100">
+                    <i class="fas fa-trash-alt"></i> حذف الرسالة
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>

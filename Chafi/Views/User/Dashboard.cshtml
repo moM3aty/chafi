@@ -1,0 +1,134 @@
+﻿<!-- مسار الملف: Views/User/Dashboard.cshtml -->
+@model IEnumerable<Chafi.Models.Order>
+@{
+    ViewData["Title"] = "حسابي | لوحة التحكم";
+    var user = ViewBag.User as Chafi.Models.ApplicationUser;
+}
+
+<div class="max-w-7xl mx-auto px-4 py-10 mb-14">
+    <div class="flex flex-col md:flex-row gap-8">
+
+        <!-- القائمة الجانبية وحالة الحساب -->
+        <div class="w-full md:w-1/3 lg:w-1/4">
+            <div class="bg-white rounded-3xl border-2 border-border p-6 mb-6 text-center shadow-sm">
+                <div class="w-20 h-20 bg-gradient-to-br from-pri-500 to-pri-800 rounded-full flex items-center justify-center text-gld-400 text-3xl mx-auto mb-4">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h2 class="text-xl font-black text-pri-900 mb-1">@user?.FullName</h2>
+                <p class="text-brk-400 text-sm mb-4">@user?.Email</p>
+                <div class="bg-gray-50 rounded-xl p-3 flex justify-around text-center border border-gray-100">
+                    <div>
+                        <div class="text-xs text-brk-400 mb-1">الطلبات</div>
+                        <div class="font-black text-pri-700">@ViewBag.OrdersCount</div>
+                    </div>
+                    <div class="w-px bg-gray-200"></div>
+                    <div>
+                        <div class="text-xs text-brk-400 mb-1">المدفوعات</div>
+                        <div class="font-black text-pri-700">@ViewBag.TotalSpent</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border-2 border-border overflow-hidden shadow-sm">
+                <div class="p-2 space-y-1">
+                    <button class="w-full text-right px-4 py-3 rounded-xl bg-pri-50 text-pri-700 font-bold transition">
+                        <i class="fas fa-box ml-2"></i> سجل الطلبات
+                    </button>
+                    <a href="@Url.Action("Index", "Wishlist")" class="w-full block text-right px-4 py-3 rounded-xl text-brk-500 hover:bg-gray-50 hover:text-pri-600 font-bold transition no-underline">
+                        <i class="fas fa-heart ml-2"></i> المفضلة
+                    </a>
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="w-full">
+                        <button type="submit" class="w-full text-right px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 font-bold transition">
+                            <i class="fas fa-sign-out-alt ml-2"></i> تسجيل الخروج
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- المحتوى الرئيسي (سجل الطلبات والبيانات) -->
+        <div class="w-full md:w-2/3 lg:w-3/4 space-y-8">
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="bg-green-50 border-r-4 border-green-500 p-4 rounded-xl text-green-700 font-bold text-sm mb-6 flex items-center gap-3">
+                    <i class="fas fa-check-circle text-lg"></i> @TempData["SuccessMessage"]
+                </div>
+            }
+
+            <!-- سجل الطلبات -->
+            <div class="bg-white rounded-3xl border-2 border-border p-6 sm:p-8 shadow-sm">
+                <h3 class="text-2xl font-black text-pri-900 mb-6 font-amiri"><i class="fas fa-history text-gld-500 ml-2"></i>سجل الطلبات</h3>
+
+                @if (!Model.Any())
+                {
+                    <div class="text-center py-10 text-brk-400">
+                        <i class="fas fa-box-open text-4xl mb-3 block opacity-20"></i>
+                        <p>ليس لديك أي طلبات سابقة حتى الآن.</p>
+                        <a href="@Url.Action("Index", "Home")" class="cf-btn cf-btn-pri mt-4">تسوق الآن</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="space-y-4">
+                        @foreach (var order in Model)
+                        {
+                            <div class="border-2 border-gray-100 rounded-2xl p-5 hover:border-pri-200 transition">
+                                <div class="flex flex-wrap items-center justify-between gap-4 mb-4 border-b border-gray-50 pb-4">
+                                    <div>
+                                        <div class="text-xs text-brk-400 mb-1">رقم الطلب</div>
+                                        <div class="font-bold text-pri-900">@order.OrderNumber</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-brk-400 mb-1">التاريخ</div>
+                                        <div class="font-bold text-pri-900">@order.CreatedAtFormatted</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-brk-400 mb-1">الإجمالي</div>
+                                        <div class="font-black text-pri-700">@order.TotalAmount ر.س</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-brk-400 mb-1">الحالة</div>
+                                        <span class="text-xs font-bold px-2 py-1 rounded bg-gld-50 text-gld-600">@order.Status</span>
+                                    </div>
+                                </div>
+                                <div class="text-sm text-brk-500">
+                                    <span class="font-bold text-pri-900">المنتجات:</span>
+                                    @string.Join("، ", order.Items.Select(i => $"{i.ItemName} (x{i.Quantity})"))
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- تحديث البيانات الشخصية -->
+            <div class="bg-white rounded-3xl border-2 border-border p-6 sm:p-8 shadow-sm">
+                <h3 class="text-2xl font-black text-pri-900 mb-6 font-amiri"><i class="fas fa-user-edit text-gld-500 ml-2"></i>بيانات الحساب</h3>
+
+                <form asp-action="UpdateProfile" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="cf-group !mb-0">
+                        <label class="cf-label">الاسم الكامل</label>
+                        <input type="text" name="FullName" value="@user?.FullName" class="cf-input" required>
+                    </div>
+                    <div class="cf-group !mb-0">
+                        <label class="cf-label">رقم الجوال</label>
+                        <input type="tel" name="PhoneNumber" value="@user?.PhoneNumber" class="cf-input" required dir="ltr">
+                    </div>
+                    <div class="cf-group !mb-0">
+                        <label class="cf-label">المدينة</label>
+                        <input type="text" name="City" value="@user?.City" class="cf-input">
+                    </div>
+                    <div class="cf-group !mb-0">
+                        <label class="cf-label">العنوان</label>
+                        <input type="text" name="Address" value="@user?.Address" class="cf-input">
+                    </div>
+                    <div class="md:col-span-2 mt-2">
+                        <button type="submit" class="cf-btn cf-btn-gld"><i class="fas fa-save"></i> حفظ التعديلات</button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>

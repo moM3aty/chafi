@@ -1,0 +1,100 @@
+﻿<!-- مسار الملف: Views/Admin/OrderDetails.cshtml -->
+@model Chafi.Models.Order
+@{
+    ViewData["Title"] = "تفاصيل الطلب " + Model.OrderNumber;
+}
+
+<div class="max-w-5xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-file-invoice text-gld-500 ml-2"></i>تفاصيل الطلب</h1>
+        <a href="@Url.Action("Orders", "Admin")" class="cf-btn cf-btn-out cf-btn-sm text-xs">
+            <i class="fas fa-arrow-right"></i> العودة للطلبات
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- بيانات الطلب الأساسية -->
+        <div class="bg-white rounded-2xl border-2 border-border p-6 shadow-sm">
+            <h3 class="font-bold text-pri-900 mb-4 border-b border-gray-100 pb-2"><i class="fas fa-info-circle text-gld-500 ml-1"></i> معلومات الطلب</h3>
+            <ul class="space-y-3 text-sm">
+                <li class="flex justify-between"><span class="text-brk-400">رقم الطلب:</span> <span class="font-bold text-pri-900">@Model.OrderNumber</span></li>
+                <li class="flex justify-between"><span class="text-brk-400">التاريخ:</span> <span class="font-bold">@Model.CreatedAtFormatted</span></li>
+                <li class="flex justify-between items-center">
+                    <span class="text-brk-400">الحالة:</span>
+                    <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded font-bold">@Model.Status</span>
+                </li>
+                <li class="flex justify-between"><span class="text-brk-400">إجمالي المبلغ:</span> <span class="font-black text-pri-700">@Model.TotalAmount ر.س</span></li>
+            </ul>
+        </div>
+
+        <!-- بيانات العميل والشحن -->
+        <div class="bg-white rounded-2xl border-2 border-border p-6 shadow-sm md:col-span-2">
+            <h3 class="font-bold text-pri-900 mb-4 border-b border-gray-100 pb-2"><i class="fas fa-shipping-fast text-gld-500 ml-1"></i> العميل والشحن</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <span class="text-brk-400 block mb-1">اسم العميل:</span>
+                    <span class="font-bold text-pri-900">@Model.User?.FullName</span>
+                </div>
+                <div>
+                    <span class="text-brk-400 block mb-1">رقم الجوال:</span>
+                    <span class="font-bold text-pri-900" dir="ltr">@Model.Phone</span>
+                </div>
+                <div>
+                    <span class="text-brk-400 block mb-1">المدينة:</span>
+                    <span class="font-bold text-pri-900">@Model.City</span>
+                </div>
+                <div>
+                    <span class="text-brk-400 block mb-1">العنوان التفصيلي:</span>
+                    <span class="font-bold text-pri-900">@Model.ShippingAddress</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تحديث حالة الطلب -->
+    <div class="bg-white rounded-2xl border-2 border-border p-6 shadow-sm mb-8">
+        <form asp-action="UpdateOrderStatus" asp-controller="Admin" method="post" class="flex flex-col sm:flex-row items-end gap-4">
+            <input type="hidden" name="orderId" value="@Model.Id" />
+            <div class="flex-1 w-full">
+                <label class="cf-label">تحديث حالة الطلب</label>
+                <select name="newStatus" class="cf-select">
+                    <option value="Pending" selected="@(Model.Status == Chafi.Models.OrderStatus.Pending)">قيد الانتظار</option>
+                    <option value="Confirmed" selected="@(Model.Status == Chafi.Models.OrderStatus.Confirmed)">مؤكد</option>
+                    <option value="Processing" selected="@(Model.Status == Chafi.Models.OrderStatus.Processing)">قيد التجهيز</option>
+                    <option value="Shipped" selected="@(Model.Status == Chafi.Models.OrderStatus.Shipped)">تم الشحن</option>
+                    <option value="Delivered" selected="@(Model.Status == Chafi.Models.OrderStatus.Delivered)">تم التسليم</option>
+                    <option value="Cancelled" selected="@(Model.Status == Chafi.Models.OrderStatus.Cancelled)">ملغي</option>
+                </select>
+            </div>
+            <button type="submit" class="cf-btn cf-btn-pri w-full sm:w-auto"><i class="fas fa-sync-alt"></i> تحديث</button>
+        </form>
+    </div>
+
+    <!-- المنتجات المطلوبة -->
+    <div class="bg-white rounded-2xl border-2 border-border overflow-hidden shadow-sm">
+        <h3 class="font-bold text-pri-900 p-6 border-b border-gray-100 bg-gray-50"><i class="fas fa-box-open text-gld-500 ml-1"></i> المنتجات المطلوبة</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100 text-brk-500">
+                    <tr>
+                        <th class="p-4 font-bold">المنتج</th>
+                        <th class="p-4 font-bold text-center">السعر</th>
+                        <th class="p-4 font-bold text-center">الكمية</th>
+                        <th class="p-4 font-bold text-center">الإجمالي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr class="border-b border-gray-50">
+                            <td class="p-4 font-bold text-pri-900">@item.ItemName</td>
+                            <td class="p-4 text-center text-brk-500">@item.UnitPrice ر.س</td>
+                            <td class="p-4 text-center font-bold">x @item.Quantity</td>
+                            <td class="p-4 text-center font-bold text-pri-700">@item.TotalPrice ر.س</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

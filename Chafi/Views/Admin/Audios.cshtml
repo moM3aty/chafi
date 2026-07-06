@@ -1,0 +1,64 @@
+﻿<!-- مسار الملف: Views/Admin/Audios.cshtml -->
+@model IEnumerable<Chafi.Models.Audio>
+@{
+    ViewData["Title"] = "إدارة الصوتيات";
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-headphones text-gld-500 ml-2"></i>إدارة الصوتيات</h1>
+        <a href="@Url.Action("CreateAudio")" class="cf-btn cf-btn-gld cf-btn-sm">
+            <i class="fas fa-plus"></i> إضافة مقطع صوتي
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl border-2 border-border overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100 text-brk-500">
+                    <tr>
+                        <th class="p-4 font-bold">العنوان</th>
+                        <th class="p-4 font-bold">القارئ</th>
+                        <th class="p-4 font-bold text-center">السعر</th>
+                        <th class="p-4 font-bold text-center">الاستماعات</th>
+                        <th class="p-4 font-bold text-center">الحالة</th>
+                        <th class="p-4 font-bold text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                                <td class="p-4 font-bold text-pri-900">@item.Title</td>
+                                <td class="p-4 text-brk-500">@item.Narrator</td>
+                                <td class="p-4 text-center font-bold text-pri-700">@(item.Price == 0 ? "مجاني" : item.Price + " ر.س")</td>
+                                <td class="p-4 text-center text-brk-500">@item.ListenCount</td>
+                                <td class="p-4 text-center">
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">مفعل</span>
+                                    }
+                                    else
+                                    {
+
+                                        <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">معطل</span>
+                                    }
+                                </td>
+                                <td class="p-4 flex justify-center gap-2">
+                                    <button class="w-8 h-8 rounded bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition flex items-center justify-center" title="تعديل"><i class="fas fa-edit"></i></button>
+                                    <button class="w-8 h-8 rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition flex items-center justify-center" title="حذف"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6" class="p-8 text-center text-brk-400">لا توجد مقاطع صوتية حتى الآن</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

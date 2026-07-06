@@ -1,0 +1,58 @@
+﻿@model IEnumerable<Chafi.Models.SiteSetting>
+@{
+    ViewData["Title"] = "إعدادات الموقع";
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-cogs text-gld-500 ml-2"></i>إعدادات الموقع</h1>
+        @if (User.IsInRole("SuperAdmin"))
+        {
+            <a href="@Url.Action("ManageRoles", "Admin")" class="cf-btn cf-btn-pri cf-btn-sm">
+                <i class="fas fa-user-shield"></i> إدارة الصلاحيات للمستخدمين
+            </a>
+        }
+    </div>
+
+    <div class="bg-white rounded-2xl border-2 border-border overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100 text-brk-500">
+                    <tr>
+                        <th class="p-4 font-bold">المفتاح (Key)</th>
+                        <th class="p-4 font-bold">القيمة (Value)</th>
+                        <th class="p-4 font-bold">الوصف</th>
+                        <th class="p-4 font-bold text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                                <td class="p-4 font-bold text-pri-900" dir="ltr">@item.Key</td>
+                                <td class="p-4 text-pri-700 max-w-xs truncate">@item.Value</td>
+                                <td class="p-4 text-brk-500 text-xs">@item.Description</td>
+                                <td class="p-4 flex justify-center gap-2">
+                                    @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+                                    {
+                                        <button class="w-8 h-8 rounded bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition flex items-center justify-center" title="تعديل"><i class="fas fa-edit"></i></button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-xs text-brk-300">لا تملك صلاحية</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="4" class="p-8 text-center text-brk-400">لم يتم إضافة إعدادات للموقع حتى الآن</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

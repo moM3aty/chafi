@@ -1,0 +1,115 @@
+﻿<!-- مسار الملف: Views/Checkout/Index.cshtml -->
+@model Chafi.Models.Cart
+@{
+    ViewData["Title"] = "إتمام الطلب";
+    decimal shipping = Model.SubTotal >= 200 ? 0 : 25;
+    decimal total = Model.SubTotal + shipping;
+}
+
+<div class="max-w-7xl mx-auto px-4 py-10 mb-14">
+    <div class="flex items-center gap-3 mb-8">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pri-500 to-pri-800 flex items-center justify-center text-gld-400 text-xl shadow-lg">
+            <i class="fas fa-lock"></i>
+        </div>
+        <h1 class="text-3xl font-black text-pri-900 font-amiri">الدفع وإتمام الطلب</h1>
+    </div>
+
+    <form asp-action="ProcessOrder" method="post" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- تفاصيل الشحن والدفع -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- 1. عنوان الشحن -->
+            <div class="bg-white rounded-2xl border-2 border-border p-6 sm:p-8">
+                <h3 class="text-lg font-black text-pri-900 mb-6 border-b border-gray-100 pb-3"><i class="fas fa-map-marked-alt text-gld-500 ml-2"></i> بيانات الشحن</h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                    <div class="cf-group !mb-0">
+                        <label class="cf-label">رقم الجوال <span class="req">*</span></label>
+                        <input type="tel" name="phone" class="cf-input" value="@ViewBag.UserPhone" required dir="ltr" placeholder="05XXXXXXXX">
+                    </div>
+                    <div class="cf-group !mb-0">
+                        <label class="cf-label">المدينة <span class="req">*</span></label>
+                        <input type="text" name="city" class="cf-input" value="@ViewBag.UserCity" required placeholder="الرياض، جدة...">
+                    </div>
+                </div>
+
+                <div class="cf-group !mb-0">
+                    <label class="cf-label">العنوان التفصيلي <span class="req">*</span></label>
+                    <textarea name="address" class="cf-textarea" rows="3" required placeholder="اسم الحي، الشارع، رقم المبنى...">@ViewBag.UserAddress</textarea>
+                </div>
+            </div>
+
+            <!-- 2. طريقة الدفع -->
+            <div class="bg-white rounded-2xl border-2 border-border p-6 sm:p-8">
+                <h3 class="text-lg font-black text-pri-900 mb-6 border-b border-gray-100 pb-3"><i class="fas fa-wallet text-gld-500 ml-2"></i> طريقة الدفع</h3>
+
+                <div class="space-y-4">
+                    <label class="flex items-center gap-4 p-4 rounded-xl border-2 border-pri-200 bg-pri-50 cursor-pointer transition">
+                        <input type="radio" name="paymentMethod" value="0" class="cf-check w-5 h-5" checked>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-pri-900">البطاقة الائتمانية / مدى</h4>
+                            <p class="text-xs text-brk-400 mt-1">دفع إلكتروني آمن 100%</p>
+                        </div>
+                        <div class="flex gap-1 text-2xl text-pri-600"><i class="fab fa-cc-visa"></i> <i class="fab fa-cc-mastercard"></i></div>
+                    </label>
+
+                    <label class="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-gray-300 cursor-pointer transition">
+                        <input type="radio" name="paymentMethod" value="1" class="cf-check w-5 h-5">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-pri-900">تحويل بنكي</h4>
+                            <p class="text-xs text-brk-400 mt-1">تحويل مباشر لحساب المؤسسة</p>
+                        </div>
+                        <i class="fas fa-university text-2xl text-brk-300"></i>
+                    </label>
+
+                    <label class="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-gray-300 cursor-pointer transition">
+                        <input type="radio" name="paymentMethod" value="3" class="cf-check w-5 h-5">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-pri-900">الدفع عند الاستلام</h4>
+                            <p class="text-xs text-brk-400 mt-1">قد يتم تطبيق رسوم إضافية من شركة الشحن</p>
+                        </div>
+                        <i class="fas fa-money-bill-wave text-2xl text-brk-300"></i>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ملخص الطلب النهائي -->
+        <div>
+            <div class="bg-white rounded-2xl border-2 border-border p-6 sticky top-24">
+                <h3 class="text-lg font-black text-pri-900 mb-5 border-b border-gray-100 pb-3">تأكيد الطلب</h3>
+
+                <div class="space-y-4 mb-6">
+                    @foreach (var item in Model.Items)
+                    {
+                        <div class="flex items-center gap-3">
+                            <img src="@(item.ItemImage ?? "https://picsum.photos/50")" class="w-12 h-12 rounded object-cover border border-gray-100">
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-bold text-pri-900 truncate">@item.ItemName</div>
+                                <div class="text-[11px] text-brk-400">الكمية: @item.Quantity × @item.UnitPrice ر.س</div>
+                            </div>
+                            <div class="font-bold text-pri-700 text-sm">@item.TotalPrice</div>
+                        </div>
+                    }
+                </div>
+
+                <div class="space-y-3 text-sm text-brk-500 mb-5 border-t border-gray-100 pt-4">
+                    <div class="flex justify-between"><span>المجموع الفرعي</span><span class="font-bold">@Model.SubTotal ر.س</span></div>
+                    <div class="flex justify-between"><span>الشحن</span><span class="@(shipping == 0 ? "text-pri-600 font-bold" : "")">@(shipping == 0 ? "مجاني" : shipping + " ر.س")</span></div>
+                </div>
+
+                <div class="border-t border-gray-100 pt-4 mb-6">
+                    <div class="flex justify-between items-center">
+                        <span class="text-base font-bold text-pri-900">الإجمالي المستحق</span>
+                        <span class="text-2xl font-black text-pri-700">@total ر.س</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="cf-btn cf-btn-gld cf-btn-full cf-btn-lg justify-center shadow-xl">
+                    <i class="fas fa-check-circle"></i> تأكيد الطلب والدفع
+                </button>
+                <p class="text-center text-[10px] text-brk-400 mt-3"><i class="fas fa-lock text-gld-500"></i> جميع بياناتك مشفرة ومحمية</p>
+            </div>
+        </div>
+    </form>
+</div>

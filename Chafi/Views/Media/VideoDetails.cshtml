@@ -1,0 +1,71 @@
+﻿<!-- مسار الملف: Views/Media/VideoDetails.cshtml -->
+@model Chafi.Models.Video
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <!-- مسار التنقل -->
+    <div class="flex items-center gap-2 text-sm text-brk-400 mb-8">
+        <a href="@Url.Action("Index", "Home")" class="hover:text-pri-600 transition"><i class="fas fa-home"></i> الرئيسية</a>
+        <i class="fas fa-chevron-left text-[10px]"></i>
+        <a href="@Url.Action("Details", "Category", new { id = Model.CategoryId })" class="hover:text-pri-600 transition">@Model.Category.Name</a>
+        <i class="fas fa-chevron-left text-[10px]"></i>
+        <span class="text-pri-900 font-bold truncate">@Model.Title</span>
+    </div>
+
+    <!-- عرض الفيديو والشراء -->
+    <div class="bg-white rounded-3xl border-2 border-border overflow-hidden">
+        <!-- منطقة العرض (صورة تعبيرية أو ترايلر) -->
+        <div class="relative bg-gray-900 aspect-video flex items-center justify-center">
+            @if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+            {
+                <img src="@Model.ThumbnailUrl" alt="@Model.Title" class="absolute inset-0 w-full h-full object-cover opacity-50 blur-sm">
+            }
+            <div class="relative z-10 text-center text-white">
+                <i class="fas fa-lock text-5xl mb-4 text-gld-400"></i>
+                <h3 class="text-xl font-bold mb-2">الفيديو متاح للمشتركين فقط</h3>
+                <p class="text-white/70 text-sm">قم بشراء الفيديو لتتمكن من المشاهدة بدقة عالية الجودة</p>
+            </div>
+        </div>
+
+        <!-- تفاصيل الفيديو -->
+        <div class="p-6 sm:p-10 flex flex-col md:flex-row gap-8 justify-between">
+            <div class="md:w-2/3">
+                <h1 class="text-2xl sm:text-3xl font-black text-pri-900 font-amiri mb-3">@Model.Title</h1>
+                <div class="flex flex-wrap items-center gap-4 mb-4 text-brk-500 text-sm">
+                    <span><i class="fas fa-chalkboard-teacher text-gld-500 ml-1"></i> @Model.Presenter</span>
+                    <span class="text-gray-300">|</span>
+                    <span><i class="fas fa-clock text-gld-500 ml-1"></i> @Model.FormattedDuration دقيقة</span>
+                    <span class="text-gray-300">|</span>
+                    <span><i class="fas fa-eye text-gld-500 ml-1"></i> @Model.ViewCount مشاهدة</span>
+                </div>
+                <div class="prose prose-sm text-brk-500 leading-relaxed">
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        @Html.Raw(Model.Description.Replace("\n", "<br/>"))
+                    }
+                    else
+                    {
+                        <p>فيديو تعليمي وتوضيحي يخص الرقية الشرعية. يتميز بالمحتوى الموثوق والجودة العالية.</p>
+                    }
+                </div>
+            </div>
+
+            <!-- بطاقة الشراء -->
+            <div class="md:w-1/3">
+                <div class="bg-gray-50 border border-gray-100 rounded-2xl p-6 text-center">
+                    <div class="text-3xl font-black text-pri-700 mb-2">@Model.Price <span class="text-base font-bold">ر.س</span></div>
+                    <p class="text-xs text-brk-400 mb-6">وصول دائم ومباشر فور الشراء</p>
+
+                    <form asp-controller="Cart" asp-action="AddToCart" method="post">
+                        <input type="hidden" name="videoId" value="@Model.Id" />
+                        <button type="submit" class="cf-btn cf-btn-gld cf-btn-full h-12">
+                            <i class="fas fa-cart-arrow-down"></i> شراء الفيديو الآن
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

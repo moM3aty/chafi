@@ -1,0 +1,97 @@
+﻿<!-- مسار الملف: Views/Search/Index.cshtml -->
+@model Chafi.ViewModels.SearchViewModel
+@{
+    ViewData["Title"] = $"نتائج البحث عن: {Model.Query}";
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <div class="mb-10 text-center afiu">
+        <h1 class="text-2xl sm:text-3xl font-black text-pri-900 font-amiri mb-3">نتائج البحث</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Query))
+        {
+            <p class="text-brk-500">تم العثور على <span class="font-bold text-gld-600">@Model.TotalResults</span> نتيجة لـ "<span class="font-bold">@Model.Query</span>"</p>
+        }
+    </div>
+
+    @if (Model.TotalResults == 0)
+    {
+        <div class="bg-white rounded-3xl border-2 border-border p-12 text-center shadow-sm afiu">
+            <i class="fas fa-search text-6xl text-brk-300 mb-4 opacity-50"></i>
+            <h3 class="text-xl font-bold text-pri-900 mb-2">لا توجد نتائج مطابقة</h3>
+            <p class="text-brk-400 mb-6">جرب البحث بكلمات أخرى أو تأكد من الإملاء الصحيح.</p>
+            <a href="@Url.Action("Index", "Home")" class="cf-btn cf-btn-pri inline-flex"><i class="fas fa-store"></i> العودة للرئيسية</a>
+        </div>
+    }
+    else
+    {
+        <!-- نتائج المنتجات -->
+        @if (Model.Products.Any())
+        {
+            <div class="mb-12 afiu">
+                <h3 class="text-xl font-black text-pri-900 mb-5 border-b border-gray-100 pb-2"><i class="fas fa-box text-gld-500 ml-2"></i>المنتجات</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    @foreach (var prod in Model.Products)
+                    {
+                        <div class="prod-card">
+                            <div class="prod-img-w"><img src="@(prod.ImageUrl ?? "https://picsum.photos/400")" alt="@prod.Name" loading="lazy"></div>
+                            <div class="p-4">
+                                <h4 class="font-bold text-pri-900 text-sm mb-1.5 leading-relaxed line-clamp-2" style="min-height:40px">@prod.Name</h4>
+                                <div class="flex items-center justify-between mt-3">
+                                    <span class="text-pri-700 font-black text-lg">@prod.Price ر.س</span>
+                                    <a href="@Url.Action("Details", "Product", new { id = prod.Id, slug = prod.Slug })" class="cf-btn cf-btn-out cf-btn-sm py-1.5 px-3">عرض</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- نتائج الصوتيات -->
+        @if (Model.Audios.Any())
+        {
+            <div class="mb-12 afiu" style="animation-delay: 0.1s">
+                <h3 class="text-xl font-black text-pri-900 mb-5 border-b border-gray-100 pb-2"><i class="fas fa-headphones text-gld-500 ml-2"></i>الصوتيات</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @foreach (var audio in Model.Audios)
+                    {
+                        <div class="aud-card bg-white">
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-pri-900 text-sm mb-1 truncate">@audio.Title</h4>
+                                <div class="text-brk-400 text-xs mb-2">@audio.Narrator</div>
+                                <div class="flex items-center gap-3"><span class="text-pri-600 font-bold text-sm">@(audio.Price == 0 ? "مجاني" : audio.Price + " ر.س")</span></div>
+                            </div>
+                            <a href="@Url.Action("AudioDetails", "Media", new { id = audio.Id })" class="cf-btn cf-btn-pri cf-btn-sm py-1.5 px-3 rounded-lg shrink-0">تفاصيل</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- نتائج الفيديوهات -->
+        @if (Model.Videos.Any())
+        {
+            <div class="afiu" style="animation-delay: 0.2s">
+                <h3 class="text-xl font-black text-pri-900 mb-5 border-b border-gray-100 pb-2"><i class="fas fa-video text-gld-500 ml-2"></i>الفيديوهات</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    @foreach (var video in Model.Videos)
+                    {
+                        <div class="vid-card bg-white">
+                            <div class="vid-thumb">
+                                <img src="@(video.ThumbnailUrl ?? "https://picsum.photos/600/340")" alt="@video.Title" loading="lazy">
+                                <div class="vid-ov"><div class="vid-ico"><i class="fas fa-play" style="margin-right:-2px"></i></div></div>
+                            </div>
+                            <div class="p-4">
+                                <h4 class="font-bold text-pri-900 text-sm mb-1 leading-relaxed line-clamp-2">@video.Title</h4>
+                                <div class="flex items-center justify-between mt-3">
+                                    <span class="font-black text-pri-600">@(video.Price == 0 ? "مجاني" : video.Price + " ر.س")</span>
+                                    <a href="@Url.Action("VideoDetails", "Media", new { id = video.Id })" class="cf-btn cf-btn-gld cf-btn-sm py-1.5 px-3">مشاهدة</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>

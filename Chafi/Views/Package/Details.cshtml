@@ -1,0 +1,87 @@
+﻿<!-- مسار الملف: Views/Package/Details.cshtml -->
+@model Chafi.Models.Package
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <!-- مسار التنقل -->
+    <div class="flex items-center gap-2 text-sm text-brk-400 mb-8">
+        <a href="@Url.Action("Index", "Home")" class="hover:text-pri-600 transition"><i class="fas fa-home"></i> الرئيسية</a>
+        <i class="fas fa-chevron-left text-[10px]"></i>
+        <a href="@Url.Action("Index", "Package")" class="hover:text-pri-600 transition">الباقات المميزة</a>
+        <i class="fas fa-chevron-left text-[10px]"></i>
+        <span class="text-pri-900 font-bold truncate">@Model.Name</span>
+    </div>
+
+    <div class="bg-white rounded-3xl border-2 border-border p-6 sm:p-10 shadow-sm relative overflow-hidden">
+        @if (Model.IsFeatured)
+        {
+            <div class="absolute top-8 -right-12 bg-gld-500 text-white font-bold text-sm py-1.5 px-12 transform rotate-45 shadow-md">باقة مميزة</div>
+        }
+
+        <div class="flex flex-col lg:flex-row gap-10">
+            <!-- صورة الباقة والمحتويات -->
+            <div class="w-full lg:w-5/12 shrink-0">
+                <div class="rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 aspect-square relative mb-6">
+                    <img src="@(Model.ImageUrl ?? "https://picsum.photos/600")" alt="@Model.Name" class="w-full h-full object-cover">
+                </div>
+
+                <h3 class="text-lg font-black text-pri-900 mb-4 border-b border-gray-100 pb-2">محتويات الباقة:</h3>
+                <ul class="space-y-3">
+                    @foreach (var item in Model.Items)
+                    {
+                        <li class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                            <img src="@(item.Product.ImageUrl ?? "https://picsum.photos/50")" class="w-10 h-10 rounded object-cover">
+                            <div class="flex-1 min-w-0 text-sm">
+                                <div class="font-bold text-pri-900 truncate">@item.Product.Name</div>
+                                <div class="text-brk-400 text-xs">الكمية: @item.Quantity</div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <!-- تفاصيل الشراء -->
+            <div class="w-full lg:w-7/12 flex flex-col">
+                <h1 class="text-3xl sm:text-4xl font-black text-pri-900 font-amiri mb-3">@Model.Name</h1>
+
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="pkg-save bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold"><i class="fas fa-tags ml-1"></i> توفير @Model.SavingsPercentage%</span>
+                    <span class="text-brk-400 text-sm"><i class="fas fa-shopping-bag ml-1"></i> @Model.SalesCount مبيع</span>
+                </div>
+
+                <div class="bg-pri-50 rounded-2xl p-6 mb-8 border border-pri-100 flex items-center justify-between">
+                    <div>
+                        <div class="text-brk-500 text-sm line-through mb-1">السعر الأصلي: @Model.OriginalTotalPrice ر.س</div>
+                        <div class="text-4xl font-black text-pri-700">@Model.PackagePrice <span class="text-lg font-bold">ر.س</span></div>
+                    </div>
+                    <div class="text-center bg-white p-3 rounded-xl border border-pri-100 shadow-sm hidden sm:block">
+                        <div class="text-xs text-brk-400 mb-1">مقدار التوفير</div>
+                        <div class="text-lg font-black text-green-600">@Model.SavingsAmount ر.س</div>
+                    </div>
+                </div>
+
+                <div class="prose prose-sm text-brk-500 leading-relaxed mb-8">
+                    @Html.Raw(Model.Description.Replace("\n", "<br/>"))
+                </div>
+
+                <div class="mt-auto">
+                    <form asp-controller="Cart" asp-action="AddToCart" method="post" class="flex flex-wrap gap-4">
+                        <input type="hidden" name="packageId" value="@Model.Id" />
+
+                        <div class="qty bg-gray-50 border-2 border-border h-14 rounded-xl">
+                            <button type="button" class="qty-b w-12 h-full text-xl" onclick="this.nextElementSibling.stepDown()">-</button>
+                            <input type="number" name="quantity" value="1" min="1" class="qty-v w-12 bg-transparent text-lg border-0 focus:ring-0 text-center" readonly>
+                            <button type="button" class="qty-b w-12 h-full text-xl" onclick="this.previousElementSibling.stepUp()">+</button>
+                        </div>
+
+                        <button type="submit" class="cf-btn cf-btn-gld flex-1 h-14 text-lg shadow-lg">
+                            <i class="fas fa-cart-plus"></i> إضافة الباقة للسلة
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

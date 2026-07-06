@@ -1,0 +1,60 @@
+﻿@model IEnumerable<Chafi.Models.Offer>
+@{
+    ViewData["Title"] = "العروض والخصومات";
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-tags text-gld-500 ml-2"></i>إدارة العروض والخصومات</h1>
+        <button class="cf-btn cf-btn-gld cf-btn-sm" onclick="showToast('قريباً: إضافة عرض جديد', 'ok')">
+            <i class="fas fa-plus"></i> عرض جديد
+        </button>
+    </div>
+
+    <div class="bg-white rounded-2xl border-2 border-border overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100 text-brk-500">
+                    <tr>
+                        <th class="p-4 font-bold">عنوان العرض</th>
+                        <th class="p-4 font-bold text-center">نوع الخصم</th>
+                        <th class="p-4 font-bold text-center">القيمة</th>
+                        <th class="p-4 font-bold text-center">كوبون</th>
+                        <th class="p-4 font-bold text-center">المدة</th>
+                        <th class="p-4 font-bold text-center">الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                                <td class="p-4 font-bold text-pri-900">@item.Title</td>
+                                <td class="p-4 text-center">@(item.DiscountType == Chafi.Models.DiscountType.Percentage ? "نسبة مئوية" : "مبلغ ثابت")</td>
+                                <td class="p-4 text-center font-bold text-pri-700">@item.DiscountValue @(item.DiscountType == Chafi.Models.DiscountType.Percentage ? "%" : "ر.س")</td>
+                                <td class="p-4 text-center font-bold text-gld-600">@(item.CouponCode ?? "-")</td>
+                                <td class="p-4 text-center text-xs">@item.StartDate.ToString("yyyy/MM/dd")<br>إلى<br>@item.EndDate.ToString("yyyy/MM/dd")</td>
+                                <td class="p-4 text-center">
+                                    @if (item.IsActiveNow)
+                                    {
+                                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">نشط</span>
+                                    }
+                                    else
+                                    {
+
+                                        <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">منتهي/معطل</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6" class="p-8 text-center text-brk-400">لا توجد عروض أو خصومات حتى الآن</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

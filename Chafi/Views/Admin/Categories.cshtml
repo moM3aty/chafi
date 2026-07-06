@@ -1,0 +1,67 @@
+﻿<!-- مسار الملف: Views/Admin/Categories.cshtml -->
+@model IEnumerable<Chafi.Models.Category>
+@{
+    ViewData["Title"] = "إدارة الأقسام";
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-folder-open text-gld-500 ml-2"></i>إدارة الأقسام</h1>
+        <button class="cf-btn cf-btn-pri cf-btn-sm" onclick="showToast('قريباً: فتح فورم إضافة قسم جديد', 'ok')">
+            <i class="fas fa-plus"></i> قسم جديد
+        </button>
+    </div>
+
+    <div class="bg-white rounded-2xl border-2 border-border overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100 text-brk-500">
+                    <tr>
+                        <th class="p-4 font-bold">الاسم</th>
+                        <th class="p-4 font-bold">الوصف المختصر</th>
+                        <th class="p-4 font-bold text-center">الحالة</th>
+                        <th class="p-4 font-bold text-center">في القائمة</th>
+                        <th class="p-4 font-bold text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                            <td class="p-4 font-bold text-pri-900">
+                                <i class="@(item.IconClass ?? "fas fa-folder") text-gld-500 ml-2"></i> @item.Name
+                            </td>
+                            <td class="p-4 text-brk-500 truncate max-w-xs">@item.ShortDescription</td>
+                            <td class="p-4 text-center">
+                                @if (item.IsActive)
+                                {
+                                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">مفعل</span>
+                                }
+                                else
+                                {
+
+                                    <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">معطل</span>
+                                }
+                            </td>
+                            <td class="p-4 text-center">
+                                @if (item.ShowInMainMenu)
+                                {
+                                    <i class="fas fa-check text-green-500"></i>
+                                }
+                                else
+                                {
+
+                                    <i class="fas fa-times text-red-500"></i>
+                                }
+                            </td>
+                            <td class="p-4 flex justify-center gap-2">
+                                <button class="w-8 h-8 rounded bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition flex items-center justify-center" title="تعديل"><i class="fas fa-edit"></i></button>
+                                <button class="w-8 h-8 rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition flex items-center justify-center" title="حذف"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

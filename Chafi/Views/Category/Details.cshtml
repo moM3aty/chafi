@@ -1,0 +1,193 @@
+﻿@model Chafi.Models.Category
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <!-- رأس القسم (التعريف والمحتوى النصي) -->
+    <div class="sec-hd mb-10 afiu">
+        <div class="relative z-10">
+            <a href="@Url.Action("Index", "Home")" class="text-white/50 hover:text-white transition mb-3 text-sm font-medium flex items-center gap-1.5 no-underline">
+                <i class="fas fa-arrow-right text-xs"></i> العودة للرئيسية
+            </a>
+
+            <div class="flex items-center gap-3.5 mb-5">
+                <div class="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center text-2xl text-gld-400">
+                    <i class="@(Model.IconClass ?? "fas fa-folder-open")"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl sm:text-4xl font-black text-white font-amiri leading-tight">@Model.Name</h1>
+                    <div class="flex items-center gap-3 mt-1 text-white/45 text-sm">
+                        <span><i class="fas fa-eye text-[10px] ml-1"></i> @Model.ViewsCount زيارة</span>
+                        <span>|</span>
+                        <span>@Model.TotalItemsCount عنصر متاح</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- هنا يظهر المحتوى النصي الطويل (تعريف القسم) بشكل ديناميكي -->
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <div class="text-white/80 text-base leading-loose max-w-4xl bg-white/5 p-6 rounded-2xl border border-white/10 prose prose-invert">
+                    @Html.Raw(Model.Description.Replace("\n", "<br/>"))
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- الأقسام الفرعية إن وجدت -->
+    @if (Model.Children != null && Model.Children.Any(c => c.IsActive))
+    {
+        <div class="mb-10 afiu" style="animation-delay:.1s">
+            <h3 class="text-xl font-black text-pri-900 mb-4">الأقسام الفرعية</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                @foreach (var child in Model.Children.Where(c => c.IsActive))
+                {
+                    <a href="@Url.Action("Details", "Category", new { id = child.Id, slug = child.Slug })" class="bg-white rounded-xl p-5 border-2 border-border hover:border-pri-300 hover:shadow-lg transition-all cursor-pointer group no-underline block">
+                        <h4 class="font-bold text-pri-900 group-hover:text-pri-600 transition text-base mb-1">@child.Name</h4>
+                        <p class="text-brk-400 text-sm line-clamp-2">@child.ShortDescription</p>
+                    </a>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- تبويبات المحتويات (المنتجات، الصوتيات، الفيديوهات) -->
+    <div class="mb-7 afiu" style="animation-delay:.15s">
+        <div class="ct-tabs max-w-md mx-auto sm:mx-0">
+            <button class="ct-tab on" onclick="switchCategoryTab('products')">
+                <i class="fas fa-box text-xs"></i> منتجات (@Model.Products.Count)
+            </button>
+            <button class="ct-tab" onclick="switchCategoryTab('audios')">
+                <i class="fas fa-headphones text-xs"></i> صوتيات (@Model.Audios.Count)
+            </button>
+            <button class="ct-tab" onclick="switchCategoryTab('videos')">
+                <i class="fas fa-play-circle text-xs"></i> فيديوهات (@Model.Videos.Count)
+            </button>
+        </div>
+    </div>
+
+    <!-- حاوية عرض المحتويات -->
+    <div id="categoryContentContainer" class="afiu" style="animation-delay:.2s">
+
+        <!-- المنتجات -->
+        <div id="tab-products" class="tab-content block">
+            @if (!Model.Products.Any())
+            {
+                <div class="text-center py-14 text-brk-400">
+                    <i class="fas fa-box-open text-4xl mb-3 block opacity-25"></i>
+                    <p class="text-base">لا توجد منتجات في هذا القسم حالياً</p>
+                </div>
+            }
+            else
+            {
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    @foreach (var prod in Model.Products)
+                    {
+                        <div class="prod-card">
+                            <div class="prod-img-w">
+                                <img src="@(prod.ImageUrl ?? "https://picsum.photos/400/400")" alt="@prod.Name" loading="lazy">
+                            </div>
+                            <div class="p-4">
+                                <h4 class="font-bold text-pri-900 text-sm mb-1.5 leading-relaxed line-clamp-2" style="min-height:40px">@prod.Name</h4>
+                                <div class="flex items-center justify-between mt-3">
+                                    <span class="text-pri-700 font-black text-lg">@prod.Price ر.س</span>
+                                    <form asp-controller="Cart" asp-action="AddToCart" method="post">
+                                        <input type="hidden" name="productId" value="@prod.Id" />
+                                        <button type="submit" class="cf-btn cf-btn-pri cf-btn-sm text-xs py-2 px-3"><i class="fas fa-cart-plus"></i> شراء</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- الصوتيات -->
+        <div id="tab-audios" class="tab-content hidden">
+            @if (!Model.Audios.Any())
+            {
+                <div class="text-center py-14 text-brk-400">
+                    <i class="fas fa-volume-mute text-4xl mb-3 block opacity-25"></i>
+                    <p class="text-base">لا توجد صوتيات في هذا القسم حالياً</p>
+                </div>
+            }
+            else
+            {
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @foreach (var audio in Model.Audios)
+                    {
+                        <div class="aud-card">
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-pri-900 text-sm mb-1 truncate">@audio.Title</h4>
+                                <div class="text-brk-400 text-xs mb-2">@audio.Narrator</div>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-pri-600 font-bold text-sm">@audio.Price ر.س</span>
+                                </div>
+                            </div>
+                            <form asp-controller="Cart" asp-action="AddToCart" method="post" class="shrink-0">
+                                <input type="hidden" name="audioId" value="@audio.Id" />
+                                <button type="submit" class="cf-btn cf-btn-out cf-btn-sm py-1.5 px-3 rounded-lg"><i class="fas fa-cart-plus"></i></button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- الفيديوهات -->
+        <div id="tab-videos" class="tab-content hidden">
+            @if (!Model.Videos.Any())
+            {
+                <div class="text-center py-14 text-brk-400">
+                    <i class="fas fa-video-slash text-4xl mb-3 block opacity-25"></i>
+                    <p class="text-base">لا توجد فيديوهات في هذا القسم حالياً</p>
+                </div>
+            }
+            else
+            {
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    @foreach (var video in Model.Videos)
+                    {
+                        <div class="vid-card">
+                            <div class="vid-thumb">
+                                <img src="@(video.ThumbnailUrl ?? "https://picsum.photos/600/340")" alt="@video.Title" loading="lazy">
+                                <div class="vid-ov"><div class="vid-ico"><i class="fas fa-play" style="margin-right:-2px"></i></div></div>
+                            </div>
+                            <div class="p-4">
+                                <h4 class="font-bold text-pri-900 text-sm mb-1 leading-relaxed line-clamp-2" style="min-height:38px">@video.Title</h4>
+                                <div class="flex items-center justify-between mt-3">
+                                    <span class="font-black text-pri-600">@video.Price ر.س</span>
+                                    <form asp-controller="Cart" asp-action="AddToCart" method="post">
+                                        <input type="hidden" name="videoId" value="@video.Id" />
+                                        <button type="submit" class="cf-btn cf-btn-gld cf-btn-sm py-1.5 px-3"><i class="fas fa-cart-plus"></i> شراء المقطع</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function switchCategoryTab(tabName) {
+            // إخفاء جميع المحتويات
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('block'));
+
+            // إزالة التفعيل من جميع الأزرار
+            document.querySelectorAll('.ct-tab').forEach(el => el.classList.remove('on'));
+
+            // إظهار المحتوى المطلوب وتفعيل الزر
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+            document.getElementById('tab-' + tabName).classList.add('block');
+            event.currentTarget.classList.add('on');
+        }
+    </script>
+}

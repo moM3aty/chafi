@@ -1,0 +1,61 @@
+﻿<!-- مسار الملف: Views/Admin/Messages.cshtml -->
+@model IEnumerable<Chafi.Models.ContactMessage>
+@{
+    ViewData["Title"] = "رسائل التواصل";
+}
+
+<div class="max-w-7xl mx-auto px-4 py-8 mb-14">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-envelope-open-text text-gld-500 ml-2"></i>رسائل الزوار</h1>
+    </div>
+
+    <div class="bg-white rounded-2xl border-2 border-border overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100 text-brk-500">
+                    <tr>
+                        <th class="p-4 font-bold">الاسم</th>
+                        <th class="p-4 font-bold">البريد</th>
+                        <th class="p-4 font-bold">الموضوع</th>
+                        <th class="p-4 font-bold">التاريخ</th>
+                        <th class="p-4 font-bold text-center">الحالة</th>
+                        <th class="p-4 font-bold text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var msg in Model)
+                        {
+                            <tr class="border-b border-gray-50 hover:bg-gray-50 transition @(msg.IsRead ? "opacity-75" : "font-bold bg-pri-50/30")">
+                                <td class="p-4 text-pri-900">@msg.Name</td>
+                                <td class="p-4 text-brk-500" dir="ltr">@msg.Email</td>
+                                <td class="p-4 text-pri-700">@msg.Subject</td>
+                                <td class="p-4 text-brk-400 text-xs">@msg.CreatedAtFormatted</td>
+                                <td class="p-4 text-center">
+                                    @if (msg.IsRead)
+                                    {
+                                        <span class="text-gray-400 text-xs"><i class="fas fa-check-double"></i> مقروءة</span>
+                                    }
+                                    else
+                                    {
+
+                                        <span class="text-pri-600 text-xs"><i class="fas fa-envelope"></i> جديدة</span>
+                                    }
+                                </td>
+                                <td class="p-4 flex justify-center gap-2">
+                                    <button class="w-8 h-8 rounded bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition flex items-center justify-center" title="قراءة"><i class="fas fa-eye"></i></button>
+                                    <button class="w-8 h-8 rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition flex items-center justify-center" title="حذف"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6" class="p-8 text-center text-brk-400">لا توجد رسائل جديدة</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

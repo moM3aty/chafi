@@ -1,0 +1,57 @@
+﻿<!-- مسار الملف: Views/Wishlist/Index.cshtml -->
+@model IEnumerable<Chafi.Models.WishlistItem>
+@{
+    ViewData["Title"] = "المفضلة";
+}
+
+<div class="max-w-7xl mx-auto px-4 py-10 mb-14">
+    <div class="flex items-center gap-3 mb-8">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-xl shadow-lg">
+            <i class="fas fa-heart"></i>
+        </div>
+        <h1 class="text-3xl font-black text-pri-900 font-amiri">المفضلة</h1>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="bg-white rounded-3xl border-2 border-border p-12 text-center shadow-sm">
+            <i class="far fa-heart text-6xl text-brk-300 mb-4 opacity-50"></i>
+            <h3 class="text-xl font-bold text-pri-900 mb-2">قائمة المفضلة فارغة</h3>
+            <p class="text-brk-400 mb-6">تصفح المنتجات وأضف ما يعجبك للرجوع إليه لاحقاً.</p>
+            <a href="@Url.Action("Index", "Home")" class="cf-btn cf-btn-pri inline-flex"><i class="fas fa-store"></i> تصفح المتجر</a>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            @foreach (var item in Model)
+            {
+                var prod = item.Product;
+                <div class="prod-card flex flex-col h-full bg-white rounded-2xl border-2 border-border overflow-hidden hover:border-pri-500 transition-all hover:shadow-lg relative">
+                    <!-- زر إزالة من المفضلة -->
+                    <form asp-action="Remove" method="post" class="absolute top-2 right-2 z-10">
+                        <input type="hidden" name="id" value="@item.Id" />
+                        <button type="submit" class="w-8 h-8 bg-white/90 rounded-full text-red-500 hover:text-red-700 hover:bg-white shadow flex items-center justify-center transition" title="إزالة">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </form>
+
+                    <div class="h-48 overflow-hidden bg-gray-50 shrink-0">
+                        <img src="@(prod.ImageUrl ?? "https://picsum.photos/400")" alt="@prod.Name" class="w-full h-full object-cover">
+                    </div>
+
+                    <div class="p-4 flex flex-col flex-1">
+                        <h4 class="font-bold text-pri-900 text-sm mb-2 line-clamp-2">@prod.Name</h4>
+                        <div class="mt-auto flex items-center justify-between">
+                            <span class="text-pri-700 font-black text-lg">@prod.Price ر.س</span>
+                            <form asp-controller="Cart" asp-action="AddToCart" method="post">
+                                <input type="hidden" name="productId" value="@prod.Id" />
+                                <button type="submit" class="cf-btn cf-btn-pri py-1.5 px-3 text-xs"><i class="fas fa-cart-plus"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
