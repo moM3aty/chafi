@@ -1,11 +1,9 @@
 <?php
 // مسار الملف: pages/products.php
-// الوظيفة: عرض الأقسام المتداخلة، وبداخل كل قسم يتم عرض (التعريف، الأقسام الفرعية، المحتوى بتبويبات)
 
 $categoryId = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 $searchQuery = isset($_GET['q']) ? trim($_GET['q']) : '';
 
-// 1. دالة عودية لجلب المعرفات (الأبناء والأحفاد)
 function getDescendantIds($pdo, $catId) {
     $ids = [$catId];
     $stmt = $pdo->prepare("SELECT id FROM categories WHERE parent_id = ? AND is_active = 1");
@@ -17,7 +15,6 @@ function getDescendantIds($pdo, $catId) {
     return array_unique($ids);
 }
 
-// 2. جلب بيانات القسم الحالي (إن وجد)
 $category = null;
 if ($categoryId > 0) {
     $stmt = $pdo->prepare("SELECT * FROM categories WHERE id = ? AND is_active = 1");
@@ -32,7 +29,6 @@ if ($categoryId > 0 && $category) {
     $idsPlaceholder = implode(',', $allIds);
 }
 
-// 3. جلب الأقسام للعرض (الفرعية للقسم الحالي، أو الرئيسية إذا لم يكن هناك قسم)
 if ($categoryId > 0 && $category) {
     $childrenStmt = $pdo->prepare("SELECT * FROM categories WHERE parent_id = ? AND is_active = 1 ORDER BY sort_order");
     $childrenStmt->execute([$categoryId]);
@@ -43,7 +39,6 @@ if ($categoryId > 0 && $category) {
     $displayCategories = $childrenStmt->fetchAll();
 }
 
-// 4. بناء مسار التنقل (Breadcrumb)
 $breadcrumb = [];
 if ($categoryId > 0 && $category) {
     $tempId = $categoryId;
@@ -57,11 +52,10 @@ if ($categoryId > 0 && $category) {
     }
 }
 
-// 5. تجهيز استعلامات البحث وتحديد متى نعرض المحتوى
-// بناءً على طلبك: لا يتم عرض المحتوى (التبويبات) إلا إذا دخلنا لقسم معين أو قمنا بالبحث
 $showContentTabs = ($categoryId > 0 || !empty($searchQuery));
 
 $products = [];
+$packages = []; // تبويب جديد للباقات
 $digitalFiles = [];
 $audios = [];
 $videos = [];
@@ -70,11 +64,13 @@ if ($showContentTabs) {
     $paramsProd = [];
     $paramsMedia = [];
     $searchWhereProd = "";
+    $searchWherePkg = "";
     $searchWhereAudio = "";
     $searchWhereVideo = "";
 
     if (!empty($searchQuery)) {
         $searchWhereProd = " AND (p.name LIKE ? OR p.description LIKE ? OR p.short_description LIKE ?)";
+        $searchWherePkg = " AND (p.name LIKE ? OR p.description LIKE ? OR p.short_description LIKE ?)";
         $searchWhereAudio = " AND (a.title LIKE ? OR a.description LIKE ?)";
         $searchWhereVideo = " AND (v.title LIKE ? OR v.description LIKE ?)";
         $like = "%" . $searchQuery . "%";
@@ -86,38 +82,37 @@ if ($showContentTabs) {
     $catConditionA = !empty($idsPlaceholder) ? " AND a.category_id IN ($idsPlaceholder)" : "";
     $catConditionV = !empty($idsPlaceholder) ? " AND v.category_id IN ($idsPlaceholder)" : "";
 
-    // المنتجات الملموسة
     $stmtProd = $pdo->prepare("SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_active = 1 $catConditionP $searchWhereProd AND p.is_digital = 0 ORDER BY p.is_featured DESC, p.id DESC");
     $stmtProd->execute($paramsProd);
     $products = $stmtProd->fetchAll();
 
-    // الملفات الرقمية
+    $stmtPkgs = $pdo->prepare("SELECT p.*, c.name as category_name FROM packages p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_active = 1 $catConditionP $searchWherePkg ORDER BY p.is_featured DESC, p.id DESC");
+    $stmtPkgs->execute($paramsProd);
+    $packages = $stmtPkgs->fetchAll();
+
     $stmtFiles = $pdo->prepare("SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_active = 1 $catConditionP $searchWhereProd AND p.is_digital = 1 ORDER BY p.id DESC");
     $stmtFiles->execute($paramsProd);
     $digitalFiles = $stmtFiles->fetchAll();
 
-    // الصوتيات
     $stmtAudios = $pdo->prepare("SELECT a.*, c.name as category_name FROM audios a LEFT JOIN categories c ON a.category_id = c.id WHERE a.is_active = 1 $catConditionA $searchWhereAudio ORDER BY a.listen_count DESC");
     $stmtAudios->execute($paramsMedia);
     $audios = $stmtAudios->fetchAll();
 
-    // الفيديوهات
     $stmtVideos = $pdo->prepare("SELECT v.*, c.name as category_name FROM videos v LEFT JOIN categories c ON v.category_id = c.id WHERE v.is_active = 1 $catConditionV $searchWhereVideo ORDER BY v.view_count DESC");
     $stmtVideos->execute($paramsMedia);
     $videos = $stmtVideos->fetchAll();
 }
 
-// إعدادات العرض للترويسة
-$catColor = $category ? ($category['color_hex'] ?? '#1a582a') : '#12381d';
-$catName = $category ? $category['name'] : 'أقسام المتجر';
-$catDesc = $category ? $category['description'] : 'اختر القسم المناسب لتصفح ما يحتويه من منتجات ومحتوى حصري.';
-$catIcon = $category ? ($category['icon_class'] ?? 'fas fa-folder-open') : 'fas fa-sitemap';
+$catColor = $category ? ($category['color_hex'] ?? '#1a582a') : '#c8a020';
+$catName = $category ? $category['name'] : 'المتجر الشامل';
+$catDesc = $category ? $category['description'] : 'تصفح جميع المنتجات والصوتيات والفيديوهات المتوفرة في متجرنا.';
+$catIcon = $category ? ($category['icon_class'] ?? 'fas fa-folder-open') : 'fas fa-store';
 
-// تحديد التبويب الافتراضي النشط
 $defaultTab = 'products';
-if (empty($products) && !empty($digitalFiles)) $defaultTab = 'files';
-if (empty($products) && empty($digitalFiles) && !empty($audios)) $defaultTab = 'audios';
-if (empty($products) && empty($digitalFiles) && empty($audios) && !empty($videos)) $defaultTab = 'videos';
+if (empty($products) && !empty($packages)) $defaultTab = 'packages';
+if (empty($products) && empty($packages) && !empty($digitalFiles)) $defaultTab = 'files';
+if (empty($products) && empty($packages) && empty($digitalFiles) && !empty($audios)) $defaultTab = 'audios';
+if (empty($products) && empty($packages) && empty($digitalFiles) && empty($audios) && !empty($videos)) $defaultTab = 'videos';
 
 function formatDur($sec) {
     if (!$sec) return '--:--';
@@ -125,7 +120,6 @@ function formatDur($sec) {
     return $m . ':' . str_pad($s, 2, '0', STR_PAD_LEFT);
 }
 
-// بناء شجرة الأقسام للفلتر
 function buildCategoryTree($pdo, $parentId = null) {
     $stmt = $pdo->prepare("SELECT id, name, slug, icon_class, color_hex, parent_id FROM categories WHERE parent_id " . ($parentId === null ? "IS NULL" : "= ?") . " AND is_active = 1 ORDER BY sort_order");
     if ($parentId !== null) $stmt->execute([$parentId]);
@@ -203,7 +197,7 @@ function isInTree($node, $targetId) {
             <?php endforeach; ?>
         <?php else: ?>
             <i class="fas fa-chevron-left text-[9px] text-brk-300"></i>
-            <span class="text-pri-900 font-bold">أقسام المتجر</span>
+            <span class="text-pri-900 font-bold">المتجر الشامل</span>
         <?php endif; ?>
     </nav>
 
@@ -213,28 +207,31 @@ function isInTree($node, $targetId) {
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r" style="background-image: linear-gradient(to right, <?= $catColor ?>, <?= $catColor ?>88)"></div>
             <div class="absolute -left-20 -top-20 w-64 h-64 rounded-full opacity-5 pointer-events-none" style="background-color: <?= $catColor ?>"></div>
             
-            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6 relative z-10">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6 relative z-10 mb-8 border-b border-gray-100 pb-8">
                 <div class="w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-2xl flex items-center justify-center text-4xl shadow-lg text-white" style="background: linear-gradient(135deg, <?= $catColor ?>, <?= $catColor ?>dd)">
                     <i class="<?= $catIcon ?>"></i>
                 </div>
                 <div class="flex-1">
-                    <h1 class="text-3xl sm:text-4xl font-black text-pri-900 font-amiri mb-3 leading-tight">
+                    <h1 class="text-3xl sm:text-4xl font-black text-pri-900 font-amiri leading-tight">
                         <?php if (!empty($searchQuery)): ?>
                             نتائج البحث عن: "<?= htmlspecialchars($searchQuery) ?>"
                         <?php else: ?>
                             <?= htmlspecialchars($catName) ?>
                         <?php endif; ?>
                     </h1>
-                    <?php if (!empty($searchQuery)): ?>
-                        <p class="text-brk-500 text-sm">تم العثور على <?= count($products) + count($digitalFiles) + count($audios) + count($videos) ?> نتيجة في مختلف الأقسام.</p>
-                    <?php elseif (!empty($catDesc)): ?>
-                        <div class="prose prose-sm max-w-none text-brk-600 leading-relaxed">
-                            <?= nl2br(htmlspecialchars($catDesc)) ?>
-                        </div>
-                    <?php else: ?>
-                        <p class="text-brk-400 text-sm">تصفح محتوى هذا القسم من منتجات وصوتيات وفيديوهات.</p>
-                    <?php endif; ?>
                 </div>
+            </div>
+
+            <div class="relative z-10 text-pri-900">
+                <?php if (!empty($searchQuery)): ?>
+                    <p class="text-brk-500 text-sm">تم العثور على <?= count($products) + count($packages) + count($digitalFiles) + count($audios) + count($videos) ?> نتيجة في مختلف الأقسام.</p>
+                <?php elseif (!empty($catDesc)): ?>
+                    <div class="custom-html-content">
+                        <?= $catDesc ?>
+                    </div>
+                <?php else: ?>
+                    <p class="text-brk-400 text-sm">تصفح محتوى هذا القسم من منتجات وصوتيات وفيديوهات.</p>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -265,13 +262,13 @@ function isInTree($node, $targetId) {
         </div>
     </div>
 
-    <!-- 2. الأقسام الفرعية (أو الرئيسية في حال عدم اختيار قسم) -->
+    <!-- 2. الأقسام الفرعية (إن وجدت) -->
     <?php if (empty($searchQuery) && !empty($displayCategories)): 
         $gridClass = ($categoryId == 0) ? 'lg:grid-cols-4' : 'lg:grid-cols-5';
     ?>
     <div class="mb-12 afiu" style="animation-delay:.12s">
         <h3 class="text-xl font-black text-pri-900 font-amiri mb-5 border-r-4 pr-3 flex items-center gap-2" style="border-color: <?= $catColor ?>">
-            <?= $categoryId > 0 ? 'تفرعات القسم' : 'اختر القسم لتصفح محتوياته' ?>
+            <?= $categoryId > 0 ? 'تفرعات القسم' : 'أقسام المتجر الرئيسية' ?>
         </h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 <?= $gridClass ?> gap-5">
             <?php foreach ($displayCategories as $sub): ?>
@@ -287,7 +284,7 @@ function isInTree($node, $targetId) {
     </div>
     <?php endif; ?>
 
-    <!-- 3. محتوى القسم (تبويبات) -->
+    <!-- 3. محتوى المتجر (تبويبات) -->
     <?php if ($showContentTabs): ?>
     <div class="mb-8 afiu" style="animation-delay:.15s">
         <h3 class="text-xl font-black text-pri-900 font-amiri mb-5 border-r-4 pr-3 flex items-center gap-2" style="border-color: <?= $catColor ?>">
@@ -297,8 +294,11 @@ function isInTree($node, $targetId) {
             <button class="ct-tab flex-1 md:flex-none justify-center <?= $defaultTab == 'products' ? 'on' : '' ?>" onclick="switchCatTab('products', this)">
                 <i class="fas fa-box text-xs"></i> المنتجات <span class="bg-black/10 px-2 py-0.5 rounded-full text-[10px] mr-1"><?= count($products) ?></span>
             </button>
+            <button class="ct-tab flex-1 md:flex-none justify-center <?= $defaultTab == 'packages' ? 'on' : '' ?>" onclick="switchCatTab('packages', this)">
+                <i class="fas fa-gift text-xs"></i> الباقات <span class="bg-black/10 px-2 py-0.5 rounded-full text-[10px] mr-1"><?= count($packages) ?></span>
+            </button>
             <button class="ct-tab flex-1 md:flex-none justify-center <?= $defaultTab == 'files' ? 'on' : '' ?>" onclick="switchCatTab('files', this)">
-                <i class="fas fa-file-pdf text-xs"></i> الملفات والكتب <span class="bg-black/10 px-2 py-0.5 rounded-full text-[10px] mr-1"><?= count($digitalFiles) ?></span>
+                <i class="fas fa-file-pdf text-xs"></i> الملفات <span class="bg-black/10 px-2 py-0.5 rounded-full text-[10px] mr-1"><?= count($digitalFiles) ?></span>
             </button>
             <button class="ct-tab flex-1 md:flex-none justify-center <?= $defaultTab == 'audios' ? 'on' : '' ?>" onclick="switchCatTab('audios', this)">
                 <i class="fas fa-headphones text-xs"></i> الصوتيات <span class="bg-black/10 px-2 py-0.5 rounded-full text-[10px] mr-1"><?= count($audios) ?></span>
@@ -314,7 +314,7 @@ function isInTree($node, $targetId) {
         <?php if (empty($products)): ?>
             <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
                 <i class="fas fa-box-open text-5xl mb-4 text-brk-200 block opacity-50"></i>
-                <p class="text-lg font-bold text-pri-900">لا توجد منتجات ملموسة في هذا القسم</p>
+                <p class="text-lg font-bold text-pri-900">لا توجد منتجات ملموسة هنا</p>
             </div>
         <?php else: ?>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -333,15 +333,54 @@ function isInTree($node, $targetId) {
                             <div class="mt-auto flex items-center justify-between pt-3 border-t border-gray-50">
                                 <div>
                                     <?php if ($hasDisc): ?>
-                                        <span class="text-brk-300 text-xs line-through ml-1"><?= number_format($prod['old_price'], 2) ?></span>
+                                        <span class="text-brk-300 text-xs line-through ml-1"><?= number_format($prod['old_price'], 2) ?> ر.س</span>
                                     <?php endif; ?>
                                     <span class="text-pri-700 font-black text-lg"><?= number_format($prod['price'], 2) ?> <span class="text-xs font-bold">ر.س</span></span>
                                 </div>
-                                <button onclick="event.preventDefault(); addToCart(<?= $prod['id'] ?>, 1)" class="cf-btn cf-btn-pri cf-btn-sm text-xs py-2 px-3"><i class="fas fa-cart-plus"></i></button>
+                                <button onclick="event.preventDefault(); addToCart('product', <?= $prod['id'] ?>)" class="cf-btn cf-btn-pri cf-btn-sm text-xs py-2 px-3"><i class="fas fa-cart-plus"></i></button>
                             </div>
                         </div>
                     </a>
                 </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- محتوى: الباقات -->
+    <div id="tab-packages" class="tab-content <?= $defaultTab == 'packages' ? 'block' : 'hidden' ?> afiu" style="animation-delay:.2s">
+        <?php if (empty($packages)): ?>
+            <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
+                <i class="fas fa-gift text-5xl mb-4 text-brk-200 block opacity-50"></i>
+                <p class="text-lg font-bold text-pri-900">لا توجد باقات وعروض في هذا القسم</p>
+            </div>
+        <?php else: ?>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <?php foreach ($packages as $p): 
+                    $savings = $p['original_total_price'] > 0 ? round((($p['original_total_price'] - $p['package_price']) / $p['original_total_price']) * 100) : 0;
+                ?>
+                    <div class="pkg-card <?= $p['is_featured'] ? 'feat' : '' ?>">
+                        <?php if ($p['is_featured']): ?>
+                            <div class="pkg-feat-badge">الأكثر طلباً</div>
+                        <?php endif; ?>
+                        <div class="pkg-hd">
+                            <img src="<?= htmlspecialchars($p['image_url'] ?? "https://picsum.photos/400") ?>" alt="<?= htmlspecialchars($p['name']) ?>" class="w-24 h-24 rounded-2xl mx-auto mb-4 object-cover <?= !$p['is_featured'] ? 'border-2 border-gray-100' : '' ?>" loading="lazy">
+                            <h3 class="text-xl font-black <?= $p['is_featured'] ? 'text-white' : 'text-pri-900' ?>"><?= htmlspecialchars($p['name']) ?></h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center justify-center gap-3 mb-4">
+                                <span class="pkg-save"><i class="fas fa-bolt text-[10px]"></i> وفّر <?= $savings ?>%</span>
+                                <span class="line-through text-brk-300 text-sm"><?= number_format($p['original_total_price'], 2) ?> ر.س</span>
+                            </div>
+                            <div class="text-center mb-6">
+                                <span class="text-4xl font-black text-pri-700"><?= number_format($p['package_price'], 2) ?></span>
+                                <span class="text-brk-400 text-sm mr-1">ر.س</span>
+                            </div>
+                            <a href="index.php?page=package_details&id=<?= $p['id'] ?>" class="btn <?= $p['is_featured'] ? 'btn-gold' : 'btn-primary' ?> btn-block">
+                                تفاصيل الباقة <i class="fas fa-arrow-left text-xs mr-1"></i>
+                            </a>
+                        </div>
+                    </div>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
@@ -352,7 +391,7 @@ function isInTree($node, $targetId) {
         <?php if (empty($digitalFiles)): ?>
             <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
                 <i class="fas fa-file-pdf text-5xl mb-4 text-brk-200 block opacity-50"></i>
-                <p class="text-lg font-bold text-pri-900">لا توجد ملفات أو كتب رقمية في هذا القسم</p>
+                <p class="text-lg font-bold text-pri-900">لا توجد ملفات أو كتب رقمية هنا</p>
             </div>
         <?php else: ?>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -382,7 +421,7 @@ function isInTree($node, $targetId) {
         <?php if (empty($audios)): ?>
             <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
                 <i class="fas fa-volume-mute text-5xl mb-4 text-brk-200 block opacity-50"></i>
-                <p class="text-lg font-bold text-pri-900">لا توجد مقاطع صوتية في هذا القسم</p>
+                <p class="text-lg font-bold text-pri-900">لا توجد مقاطع صوتية هنا</p>
             </div>
         <?php else: ?>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -399,7 +438,7 @@ function isInTree($node, $targetId) {
                         </div>
                     </div>
                     <div class="flex flex-col items-end gap-1 shrink-0">
-                        <span class="font-bold text-pri-700 text-sm"><?= $audio['price'] > 0 ? number_format($audio['price'], 0) . ' ر.س' : '<span class="text-green-600">مجاني</span>' ?></span>
+                        <span class="font-bold text-pri-700 text-sm"><?= $audio['price'] > 0 ? number_format($audio['price'], 2) . ' ر.س' : '<span class="text-green-600">مجاني</span>' ?></span>
                         <span class="cf-btn cf-btn-out cf-btn-sm text-[10px] !py-1 !px-3">استماع ←</span>
                     </div>
                 </a>
@@ -413,7 +452,7 @@ function isInTree($node, $targetId) {
         <?php if (empty($videos)): ?>
             <div class="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
                 <i class="fas fa-video-slash text-5xl mb-4 text-brk-200 block opacity-50"></i>
-                <p class="text-lg font-bold text-pri-900">لا توجد مرئيات في هذا القسم</p>
+                <p class="text-lg font-bold text-pri-900">لا توجد مرئيات هنا</p>
             </div>
         <?php else: ?>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -435,7 +474,7 @@ function isInTree($node, $targetId) {
                             <span><i class="fas fa-eye text-[10px] ml-0.5"></i><?= $video['view_count'] ?></span>
                         </div>
                         <div class="flex items-center justify-between pt-3 border-t border-gray-50">
-                            <span class="font-black text-pri-600"><?= $video['price'] > 0 ? number_format($video['price'], 0) . ' ر.س' : '<span class="text-green-600 font-bold">مجاني</span>' ?></span>
+                            <span class="font-black text-pri-600"><?= $video['price'] > 0 ? number_format($video['price'], 2) . ' ر.س' : '<span class="text-green-600 font-bold">مجاني</span>' ?></span>
                             <span class="cf-btn cf-btn-gld cf-btn-sm text-xs !py-1 !px-3">مشاهدة ←</span>
                         </div>
                     </div>

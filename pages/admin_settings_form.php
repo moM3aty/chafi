@@ -7,6 +7,14 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_role'], ['Admin', 
 
 $msg = ''; $msgType = '';
 
+// إضافة إعدادات الصوت في الخلفية تلقائياً إذا لم تكن موجودة في قاعدة البيانات
+try {
+    $pdo->exec("INSERT IGNORE INTO settings (setting_key, setting_value, setting_type, setting_group, label_ar) VALUES 
+        ('bg_audio', 'https://server11.mp3quran.net/hazza/015.mp3', 'text', 'general', 'رابط المقطع الصوتي للخلفية (مثل سورة الحجر)'),
+        ('enable_bg_audio', '1', 'boolean', 'general', 'تفعيل تشغيل القرآن في الخلفية للزوار')
+    ");
+} catch(Exception $e) {}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($_POST as $key => $value) {
         if (strpos($key, 'setting_') === 0) {
@@ -42,7 +50,7 @@ foreach ($settings as $s) {
 
     <form method="post">
         <?php
-        $groupNames = ['general' => 'الإعدادات العامة', 'seo' => 'إعدادات SEO', 'social' => 'التواصل الاجتماعي', 'payment' => 'المدفوعات'];
+        $groupNames = ['general' => 'الإعدادات العامة والتشغيل', 'seo' => 'إعدادات SEO', 'social' => 'التواصل الاجتماعي', 'payment' => 'المدفوعات'];
         foreach ($groups as $groupKey => $items):
         ?>
             <div class="erp-card overflow-hidden mb-8">

@@ -1,6 +1,21 @@
 <?php
 // مسار الملف: includes/footer.php
-// النسخة المُصلحة — نظام الدخول والتسجيل يعمل بالكامل
+
+$stmtSettings = $pdo->query("SELECT setting_key, setting_value FROM settings");
+$sysSet = [];
+while($row = $stmtSettings->fetch()) {
+    $sysSet[$row['setting_key']] = $row['setting_value'];
+}
+
+// جلب الأقسام الرئيسية لعرضها كروابط سريعة في الفوتر
+$footerCategories = $pdo->query("SELECT id, name, slug FROM categories WHERE is_active = 1 AND parent_id IS NULL ORDER BY sort_order ASC LIMIT 5")->fetchAll();
+
+// إعدادات الصوتية الخلفية
+$bgAudioUrl = $sysSet['bg_audio'] ?? 'https://server11.mp3quran.net/hazza/015.mp3';
+$enableBgAudio = $sysSet['enable_bg_audio'] ?? '1';
+
+// معرفة الصفحة الحالية لكي يعمل القرآن فقط في الرئيسية
+$currentPage = isset($_GET['page']) ? trim($_GET['page']) : 'home';
 ?>
     </main>
 
@@ -9,16 +24,20 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12 border-b border-white/10 pb-12">
                 <div class="col-span-1 lg:col-span-1">
                     <a href="index.php?page=home" class="flex items-center gap-3 text-white mb-6 no-underline">
-                        <div class="text-2xl font-black font-amiri tracking-wide"><img width="100px" style="border-radius: 25px;" src="../assets/images/logo.jpg" alt="تشافي"></div>
+                        <div class="text-2xl font-black font-amiri tracking-wide">
+                                <img width="100px" style="border-radius: 25px;" src="../assets/images/logo.jpg" alt="تشافي">
+                        </div>
                     </a>
-                    <p class="text-sm leading-relaxed mb-6"> تشافي للرقية الشرعية تقدم لكم أفضل المنتجات الطبيعية المقروء عليها.</p>
+                    <p class="text-sm leading-relaxed mb-6"><?= htmlspecialchars($sysSet['site_description'] ?? 'تشافي للرقية الشرعية تقدم لكم أفضل المنتجات الطبيعية المقروء عليها.') ?></p>
+                    
                     <div class="flex items-center gap-3 text-white/40">
-                        <a href="#" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-gld-500 hover:text-white transition-all text-sm"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-gld-500 hover:text-white transition-all text-sm"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-gld-500 hover:text-white transition-all text-sm"><i class="fab fa-youtube"></i></a>
-                        <a href="#" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-gld-500 hover:text-white transition-all text-sm"><i class="fab fa-tiktok"></i></a>
+                        <?php if(!empty($sysSet['twitter'])): ?><a href="<?= htmlspecialchars($sysSet['twitter']) ?>" target="_blank" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-gld-500 hover:text-white transition-all text-sm"><i class="fab fa-twitter"></i></a><?php endif; ?>
+                        <?php if(!empty($sysSet['instagram'])): ?><a href="<?= htmlspecialchars($sysSet['instagram']) ?>" target="_blank" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-gld-500 hover:text-white transition-all text-sm"><i class="fab fa-instagram"></i></a><?php endif; ?>
+                        <?php if(!empty($sysSet['youtube'])): ?><a href="<?= htmlspecialchars($sysSet['youtube']) ?>" target="_blank" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-gld-500 hover:text-white transition-all text-sm"><i class="fab fa-youtube"></i></a><?php endif; ?>
+                        <?php if(!empty($sysSet['tiktok'])): ?><a href="<?= htmlspecialchars($sysSet['tiktok']) ?>" target="_blank" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-gld-500 hover:text-white transition-all text-sm"><i class="fab fa-tiktok"></i></a><?php endif; ?>
                     </div>
                 </div>
+
                 <div>
                     <h4 class="text-white font-bold text-lg mb-6 flex items-center gap-2"><i class="fas fa-link text-gld-500"></i> روابط سريعة</h4>
                     <ul class="space-y-3 text-sm">
@@ -28,38 +47,144 @@
                         <li><a href="index.php?page=contact" class="hover:text-gld-400 transition no-underline text-white/70 hover:text-gld-400">تواصل معنا</a></li>
                     </ul>
                 </div>
+
                 <div>
                     <h4 class="text-white font-bold text-lg mb-6 flex items-center gap-2"><i class="fas fa-box-open text-gld-500"></i> الأقسام</h4>
                     <ul class="space-y-3 text-sm">
-                        <li><a href="index.php?page=products&category_id=6" class="hover:text-gld-400 transition no-underline text-white/70 hover:text-gld-400">العسل المقروء</a></li>
-                        <li><a href="index.php?page=products&category_id=7" class="hover:text-gld-400 transition no-underline text-white/70 hover:text-gld-400">الزيوت المقروءة</a></li>
-                        <li><a href="index.php?page=products&category_id=9" class="hover:text-gld-400 transition no-underline text-white/70 hover:text-gld-400">المسك والبخور</a></li>
-                        <li><a href="index.php?page=products&category_id=8" class="hover:text-gld-400 transition no-underline text-white/70 hover:text-gld-400">المياه المقروءة</a></li>
+                        <?php foreach($footerCategories as $fCat): ?>
+                            <li><a href="index.php?page=category&category_id=<?= $fCat['id'] ?>" class="hover:text-gld-400 transition no-underline text-white/70 hover:text-gld-400"><?= htmlspecialchars($fCat['name']) ?></a></li>
+                        <?php endforeach; ?>
                     </ul>
                 </div>
+
                 <div>
                     <h4 class="text-white font-bold text-lg mb-6 flex items-center gap-2"><i class="fas fa-headset text-gld-500"></i> تواصل معنا</h4>
                     <ul class="space-y-3 text-sm">
-                        <li class="flex items-center gap-2 text-white/70"><i class="fas fa-phone-alt text-gld-500 text-xs"></i> +966 50 000 0000</li>
-                        <li class="flex items-center gap-2 text-white/70"><i class="fas fa-envelope text-gld-500 text-xs"></i> info@tashafi.net</li>
-                        <li class="flex items-center gap-2 text-white/70"><i class="fab fa-whatsapp text-gld-500 text-xs"></i> +966 50 000 0000</li>
+                        <?php if(!empty($sysSet['phone'])): ?>
+                        <li class="flex items-center gap-2 text-white/70"><i class="fas fa-phone-alt text-gld-500 text-xs"></i> <span dir="ltr"><?= htmlspecialchars($sysSet['phone']) ?></span></li>
+                        <?php endif; ?>
+                        
+                        <?php if(!empty($sysSet['whatsapp'])): ?>
+                        <li class="flex items-center gap-2 text-white/70"><i class="fab fa-whatsapp text-gld-500 text-xs"></i> <span dir="ltr"><?= htmlspecialchars($sysSet['whatsapp']) ?></span></li>
+                        <?php endif; ?>
+
+                        <?php if(!empty($sysSet['email'])): ?>
+                        <li class="flex items-center gap-2 text-white/70"><i class="fas fa-envelope text-gld-500 text-xs"></i> <?= htmlspecialchars($sysSet['email']) ?></li>
+                        <?php endif; ?>
+
+                        <?php if(!empty($sysSet['address'])): ?>
+                        <li class="flex items-start gap-2 text-white/70 mt-4 leading-relaxed"><i class="fas fa-map-marker-alt text-gld-500 text-xs mt-1"></i> <?= htmlspecialchars($sysSet['address']) ?></li>
+                        <?php endif; ?>
                     </ul>
                 </div>
             </div>
-            <div class="text-center text-sm text-white/40">
-                جميع الحقوق محفوظة لمنصة تشافي &copy; <?= date('Y') ?>
+            
+            <div class="text-center text-sm text-white/40 flex flex-col items-center gap-2">
+                <div>جميع الحقوق محفوظة لمنصة <?= htmlspecialchars($sysSet['site_name'] ?? 'تشافي') ?> &copy; <?= date('Y') ?></div>
+                <div class="text-xs">نسأل الله أن يجعل القرآن العظيم شفاءً ورحمةً للمؤمنين.</div>
             </div>
         </div>
     </footer>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         مودال تسجيل الدخول وإنشاء الحساب — النسخة المُصلحة
-         ═══════════════════════════════════════════════════════════ -->
+    <?php 
+    // التأكد من تشغيل الصوت والمشغل فقط إذا كنا في الصفحة الرئيسية
+    if($enableBgAudio == '1' && !empty($bgAudioUrl) && $currentPage === 'home'): 
+    ?>
+    <!-- مشغل القرآن الكريم العائم (في الرئيسية فقط) -->
+    <div class="fixed bottom-6 left-6 z-[99999] flex items-center gap-3 bg-white/90 backdrop-blur-md p-2 pl-4 rounded-full shadow-2xl border border-pri-100 hover:shadow-pri-500/20 transition-all group" id="quranWidget">
+        <audio id="siteBgAudio" loop preload="auto">
+            <source src="<?= htmlspecialchars($bgAudioUrl) ?>" type="audio/mpeg">
+        </audio>
+        
+        <button id="quranPlayBtn" class="w-10 h-10 rounded-full bg-gradient-to-br from-pri-500 to-pri-700 text-white flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+            <i class="fas fa-play ml-1 text-sm"></i>
+        </button>
+        
+        <div class="flex flex-col">
+            <span class="text-[10px] text-pri-600 font-bold uppercase tracking-wider mb-0.5">تلاوة مباركة</span>
+            <div class="text-xs font-black text-pri-900 w-24 overflow-hidden relative h-4">
+                <div class="absolute whitespace-nowrap animate-[marquee_10s_linear_infinite]" id="quranTrackName">تلاوة هادئة للخلفية</div>
+            </div>
+        </div>
+        
+        <div class="flex items-end gap-0.5 h-4 ml-1 opacity-50" id="quranWaves">
+            <div class="w-1 bg-pri-400 rounded-t-sm h-1 transition-all"></div>
+            <div class="w-1 bg-pri-400 rounded-t-sm h-2 transition-all"></div>
+            <div class="w-1 bg-pri-400 rounded-t-sm h-1 transition-all"></div>
+            <div class="w-1 bg-pri-400 rounded-t-sm h-3 transition-all"></div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        .wave-anim div { animation: wave 1s infinite alternate ease-in-out; }
+        .wave-anim div:nth-child(2) { animation-delay: 0.2s; }
+        .wave-anim div:nth-child(3) { animation-delay: 0.4s; }
+        .wave-anim div:nth-child(4) { animation-delay: 0.6s; }
+        @keyframes wave { 0% { height: 20%; } 100% { height: 100%; } }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const audio = document.getElementById('siteBgAudio');
+        if(!audio) return;
+        
+        const playBtn = document.getElementById('quranPlayBtn');
+        const waves = document.getElementById('quranWaves');
+        let isPlaying = false;
+
+        function updatePlayerState(playing) {
+            isPlaying = playing;
+            if(playing) {
+                playBtn.innerHTML = '<i class="fas fa-pause text-sm"></i>';
+                playBtn.classList.replace('from-pri-500', 'from-gld-500');
+                playBtn.classList.replace('to-pri-700', 'to-gld-700');
+                waves.classList.add('wave-anim');
+                waves.classList.replace('opacity-50', 'opacity-100');
+            } else {
+                playBtn.innerHTML = '<i class="fas fa-play ml-1 text-sm"></i>';
+                playBtn.classList.replace('from-gld-500', 'from-pri-500');
+                playBtn.classList.replace('to-gld-700', 'to-pri-700');
+                waves.classList.remove('wave-anim');
+                waves.classList.replace('opacity-100', 'opacity-50');
+            }
+        }
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(_ => {
+                updatePlayerState(true);
+            }).catch(error => {
+                document.body.addEventListener('click', function autoPlayOnClick() {
+                    if (!isPlaying) {
+                        audio.play().then(() => {
+                            updatePlayerState(true);
+                        }).catch(e => console.log('Audio play failed:', e));
+                    }
+                    document.body.removeEventListener('click', autoPlayOnClick);
+                }, { once: true });
+            });
+        }
+
+        playBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if(isPlaying) {
+                audio.pause();
+                updatePlayerState(false);
+            } else {
+                audio.play();
+                updatePlayerState(true);
+            }
+        });
+    });
+    </script>
+    <?php endif; ?>
+
+    <!-- مودال تسجيل الدخول وإنشاء الحساب -->
     <div id="authMdl" class="modal-backdrop">
         <div class="modal-dialog" style="max-width:440px;">
             <button onclick="closeMdl('authMdl')" class="modal-close"><i class="fas fa-times"></i></button>
 
-            <!-- التبويبات -->
             <div class="flex border-b border-gray-100" id="authTabs">
                 <button type="button" onclick="switchAuthTab('login')" id="tabLogin" class="flex-1 py-4 text-center font-bold text-sm transition-all border-b-[3px] border-pri-600 text-pri-700 bg-pri-50/50">
                     <i class="fas fa-sign-in-alt ml-1"></i> تسجيل الدخول
@@ -69,10 +194,8 @@
                 </button>
             </div>
 
-            <!-- رسالة خطأ/نجاح داخل المودال -->
             <div id="authMsg" class="hidden mx-6 mt-4 p-3.5 rounded-xl text-sm font-bold"></div>
 
-            <!-- ═══ فورم تسجيل الدخول ═══ -->
             <div id="loginPanel" class="p-6 pt-5">
                 <form id="loginF" action="#" method="post" novalidate>
                     <div class="form-group mb-5">
@@ -94,7 +217,6 @@
                         </div>
                     </div>
 
-                    <!-- حالة التحميل -->
                     <div id="loginLoading" class="hidden mb-4">
                         <div class="flex items-center justify-center gap-3 p-3 bg-pri-50 rounded-xl">
                             <div class="dot-loader"><span></span><span></span><span></span></div>
@@ -108,7 +230,6 @@
                 </form>
             </div>
 
-            <!-- ═══ فورم إنشاء حساب ═══ -->
             <div id="registerPanel" class="p-6 pt-5 hidden">
                 <form id="registerF" action="#" method="post" novalidate>
                     <div class="form-group mb-4">
@@ -144,7 +265,6 @@
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
-                        <!-- مؤشر قوة كلمة المرور -->
                         <div class="mt-2 flex gap-1" id="passStrength">
                             <div class="h-1 flex-1 rounded-full bg-gray-200 transition-colors duration-300" id="str1"></div>
                             <div class="h-1 flex-1 rounded-full bg-gray-200 transition-colors duration-300" id="str2"></div>
@@ -154,7 +274,6 @@
                         <p class="text-[10px] text-brk-400 mt-1" id="strText"></p>
                     </div>
 
-                    <!-- حالة التحميل -->
                     <div id="registerLoading" class="hidden mb-4">
                         <div class="flex items-center justify-center gap-3 p-3 bg-pri-50 rounded-xl">
                             <div class="dot-loader"><span></span><span></span><span></span></div>
@@ -168,7 +287,6 @@
                 </form>
             </div>
 
-            <!-- فاصل -->
             <div class="px-6 pb-5">
                 <div class="relative flex items-center justify-center">
                     <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-100"></div></div>
@@ -181,10 +299,19 @@
     <!-- نظام التوست -->
     <div id="toastC" class="toast-container"></div>
 
+    <style>
+        /* التعديل لضمان ظهور المودالات والتنبيهات فوق الهيدر وأي محتوى آخر */
+        .modal-backdrop { z-index: 999999 !important; }
+        .toast-container { z-index: 9999999 !important; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 50%, 90% { transform: translateX(-6px); }
+            30%, 70% { transform: translateX(6px); }
+        }
+        .animate-shake { animation: shake 0.5s ease-in-out; }
+    </style>
+
     <script>
-    /* ═══════════════════════════════════════════════════════════
-       1. التوست (إشعارات)
-       ═══════════════════════════════════════════════════════════ */
     function showToast(msg, type = 'ok') {
         const c = document.getElementById('toastC');
         const t = document.createElement('div');
@@ -199,13 +326,9 @@
         }, 3500);
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       2. المودال
-       ═══════════════════════════════════════════════════════════ */
     function openMdl(id) {
         document.getElementById(id).classList.add('is-active');
         document.body.style.overflow = 'hidden';
-        // إخفاء أي رسالة سابقة عند الفتح
         const msg = document.getElementById('authMsg');
         if (msg) { msg.classList.add('hidden'); }
     }
@@ -215,19 +338,14 @@
         document.body.style.overflow = '';
     }
 
-    // إغلاق بالضغط خارج المودال
     document.getElementById('authMdl').addEventListener('click', function(e) {
         if (e.target === this) closeMdl('authMdl');
     });
 
-    // إغلاق بزر Escape
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') closeMdl('authMdl');
     });
 
-    /* ═══════════════════════════════════════════════════════════
-       3. التبديل بين تسجيل الدخول وإنشاء حساب
-       ═══════════════════════════════════════════════════════════ */
     function switchAuthTab(tab) {
         const tabLogin = document.getElementById('tabLogin');
         const tabRegister = document.getElementById('tabRegister');
@@ -235,7 +353,6 @@
         const registerPanel = document.getElementById('registerPanel');
         const msg = document.getElementById('authMsg');
 
-        // إخفاء الرسالة عند التبديل
         msg.classList.add('hidden');
 
         if (tab === 'login') {
@@ -255,9 +372,6 @@
         }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       4. إظهار/إخفاء كلمة المرور
-       ═══════════════════════════════════════════════════════════ */
     function togglePass(inputId, btn) {
         const input = document.getElementById(inputId);
         const icon = btn.querySelector('i');
@@ -272,9 +386,6 @@
         }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       5. مؤشر قوة كلمة المرور
-       ═══════════════════════════════════════════════════════════ */
     const regPassInput = document.getElementById('regPassword');
     if (regPassInput) {
         regPassInput.addEventListener('input', function() {
@@ -304,9 +415,6 @@
         });
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       6. عرض رسالة داخل المودال
-       ═══════════════════════════════════════════════════════════ */
     function showAuthMsg(text, type) {
         const msg = document.getElementById('authMsg');
         msg.classList.remove('hidden', 'bg-green-50', 'text-green-700', 'border-r-4', 'border-green-500',
@@ -317,36 +425,20 @@
             msg.classList.add('bg-red-50', 'text-red-700', 'border-r-4', 'border-red-500');
         }
         msg.innerHTML = `<i class="fas ${type === 'ok' ? 'fa-check-circle' : 'fa-exclamation-circle'} ml-2"></i>${text}`;
-        // سكرول لأعلى المودال لرؤية الرسالة
         msg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       7. تسجيل الدخول — AJAX
-       ═══════════════════════════════════════════════════════════ */
     document.getElementById('loginF').addEventListener('submit', async function(e) {
         e.preventDefault();
-
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value;
 
-        // تحقق بسيط
-        if (!email || !password) {
-            showAuthMsg('يرجى ملء جميع الحقول المطلوبة.', 'err');
-            return;
-        }
+        if (!email || !password) { showAuthMsg('يرجى ملء جميع الحقول المطلوبة.', 'err'); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAuthMsg('صيغة البريد الإلكتروني غير صحيحة.', 'err'); return; }
 
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            showAuthMsg('صيغة البريد الإلكتروني غير صحيحة.', 'err');
-            return;
-        }
-
-        // إظهار التحميل وتعطيل الزر
         const btn = document.getElementById('loginBtn');
         const loading = document.getElementById('loginLoading');
-        btn.disabled = true;
-        btn.classList.add('opacity-50', 'cursor-not-allowed');
-        loading.classList.remove('hidden');
+        btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); loading.classList.remove('hidden');
 
         try {
             const res = await fetch('ajax/auth.php?action=login', {
@@ -354,117 +446,84 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: email, password: password })
             });
-
             const result = await res.json();
-
             if (result.success) {
                 showAuthMsg(result.message, 'ok');
                 showToast(result.message, 'ok');
-                // إغلاق المودال وإعادة تحميل الصفحة
-                setTimeout(() => {
-                    closeMdl('authMdl');
-                    window.location.reload();
-                }, 800);
+                setTimeout(() => { closeMdl('authMdl'); window.location.reload(); }, 800);
             } else {
                 showAuthMsg(result.message, 'err');
-                // اهتزاز الفورم
-                this.classList.add('animate-shake');
-                setTimeout(() => this.classList.remove('animate-shake'), 500);
+                this.classList.add('animate-shake'); setTimeout(() => this.classList.remove('animate-shake'), 500);
             }
         } catch (err) {
             showAuthMsg('حدث خطأ في الاتصال بالخادم. يرجى المحاولة لاحقاً.', 'err');
         } finally {
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            loading.classList.add('hidden');
+            btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); loading.classList.add('hidden');
         }
     });
 
-    /* ═══════════════════════════════════════════════════════════
-       8. إنشاء حساب — AJAX
-       ═══════════════════════════════════════════════════════════ */
     document.getElementById('registerF').addEventListener('submit', async function(e) {
         e.preventDefault();
-
         const fullName = document.getElementById('regName').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const phone = document.getElementById('regPhone').value.trim();
         const password = document.getElementById('regPassword').value;
 
-        // تحقق من الحقول
-        if (!fullName || !email || !password) {
-            showAuthMsg('يرجى ملء الحقول المطلوبة (الاسم، البريد، كلمة المرور).', 'err');
-            return;
-        }
+        if (!fullName || !email || !password) { showAuthMsg('يرجى ملء الحقول المطلوبة.', 'err'); return; }
+        if (fullName.length < 3) { showAuthMsg('الاسم يجب أن يكون 3 أحرف على الأقل.', 'err'); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAuthMsg('صيغة البريد الإلكتروني غير صحيحة.', 'err'); return; }
+        if (password.length < 6) { showAuthMsg('كلمة المرور يجب أن تكون 6 أحرف على الأقل.', 'err'); return; }
 
-        if (fullName.length < 3) {
-            showAuthMsg('الاسم يجب أن يكون 3 أحرف على الأقل.', 'err');
-            return;
-        }
-
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            showAuthMsg('صيغة البريد الإلكتروني غير صحيحة.', 'err');
-            return;
-        }
-
-        if (password.length < 6) {
-            showAuthMsg('كلمة المرور يجب أن تكون 6 أحرف على الأقل.', 'err');
-            return;
-        }
-
-        // إظهار التحميل
         const btn = document.getElementById('registerBtn');
         const loading = document.getElementById('registerLoading');
-        btn.disabled = true;
-        btn.classList.add('opacity-50', 'cursor-not-allowed');
-        loading.classList.remove('hidden');
+        btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); loading.classList.remove('hidden');
 
         try {
             const res = await fetch('ajax/auth.php?action=register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    FullName: fullName,
-                    Email: email,
-                    PhoneNumber: phone,
-                    Password: password
-                })
+                body: JSON.stringify({ FullName: fullName, Email: email, PhoneNumber: phone, Password: password })
             });
-
             const result = await res.json();
-
             if (result.success) {
                 showAuthMsg(result.message, 'ok');
                 showToast('مرحباً بك! تم إنشاء حسابك بنجاح.', 'ok');
-                setTimeout(() => {
-                    closeMdl('authMdl');
-                    window.location.reload();
-                }, 800);
+                setTimeout(() => { closeMdl('authMdl'); window.location.reload(); }, 800);
             } else {
                 showAuthMsg(result.message, 'err');
-                this.classList.add('animate-shake');
-                setTimeout(() => this.classList.remove('animate-shake'), 500);
+                this.classList.add('animate-shake'); setTimeout(() => this.classList.remove('animate-shake'), 500);
             }
         } catch (err) {
             showAuthMsg('حدث خطأ في الاتصال بالخادم. يرجى المحاولة لاحقاً.', 'err');
         } finally {
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            loading.classList.add('hidden');
+            btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); loading.classList.add('hidden');
         }
     });
 
-    /* ═══════════════════════════════════════════════════════════
-       9. إضافة للسلة
-       ═══════════════════════════════════════════════════════════ */
-    function addToCart(productId, quantity, packageId, audioId, videoId) {
+    /* دالة السلة الشاملة والذكية (Smart AddToCart) */
+    function addToCart(arg1, arg2, arg3, arg4, arg5) {
         const formData = new FormData();
         formData.append('action', 'add');
-        if (productId > 0) formData.append('product_id', productId);
-        if (packageId > 0) formData.append('package_id', packageId);
-        if (audioId > 0) formData.append('audio_id', audioId);
-        if (videoId > 0) formData.append('video_id', videoId);
-        formData.append('quantity', quantity || 1);
+
+        let itemType = 'product';
+        let itemId = 0;
+        let qty = 1;
+
+        if (typeof arg1 === 'string') {
+            itemType = arg1;
+            itemId = parseInt(arg2) || 0;
+            qty = parseInt(arg3) || 1;
+        } else {
+            qty = parseInt(arg2) || 1;
+            if (arg1 > 0) { itemType = 'product'; itemId = parseInt(arg1); }
+            else if (arg3 > 0) { itemType = 'package'; itemId = parseInt(arg3); }
+            else if (arg4 > 0) { itemType = 'audio'; itemId = parseInt(arg4); }
+            else if (arg5 > 0) { itemType = 'video'; itemId = parseInt(arg5); }
+        }
+
+        formData.append('item_type', itemType);
+        formData.append('item_id', itemId);
+        formData.append('quantity', qty);
 
         fetch('ajax/cart_action.php', { method: 'POST', body: formData })
             .then(res => res.json())
@@ -472,25 +531,15 @@
                 if (data.success) {
                     showToast(data.message, 'ok');
                     const counter = document.getElementById('cCount');
-                    if (counter) counter.innerText = data.total_items;
+                    if (counter && data.totals && data.totals.count !== undefined) {
+                        counter.innerText = data.totals.count;
+                    }
                 } else {
                     showToast(data.message || 'حدث خطأ', 'err');
                 }
             })
-            .catch(() => showToast('حدث خطأ في الاتصال', 'err'));
+            .catch(() => showToast('حدث خطأ في الاتصال بالسيرفر', 'err'));
     }
     </script>
-
-    <style>
-        /* اهتزاز الفورم عند الخطأ */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 50%, 90% { transform: translateX(-6px); }
-            30%, 70% { transform: translateX(6px); }
-        }
-        .animate-shake {
-            animation: shake 0.5s ease-in-out;
-        }
-    </style>
 </body>
 </html>

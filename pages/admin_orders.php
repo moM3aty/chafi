@@ -13,8 +13,8 @@ if (isset($_POST['update_status'])) {
     echo "<script>window.location.href='index.php?page=admin_orders&updated=1';</script>"; exit;
 }
 
-// جلب الطلبات
-$orders = $pdo->query("SELECT o.*, u.full_name, u.email FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.id DESC")->fetchAll();
+// جلب الطلبات (استخدام LEFT JOIN لضمان ظهور الطلب حتى لو تم حذف حساب المستخدم)
+$orders = $pdo->query("SELECT o.*, u.full_name, u.email FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.id DESC")->fetchAll();
 ?>
 
 <div class="max-w-7xl mx-auto px-4 py-8 mb-14 afiu">
@@ -49,7 +49,7 @@ $orders = $pdo->query("SELECT o.*, u.full_name, u.email FROM orders o JOIN users
                                 <td class="font-bold text-pri-900" dir="ltr"><?= htmlspecialchars($o['order_number']) ?></td>
                                 <td class="text-xs text-brk-500"><?= date('Y-m-d H:i', strtotime($o['created_at'])) ?></td>
                                 <td>
-                                    <div class="font-bold text-pri-900"><?= htmlspecialchars($o['full_name']) ?></div>
+                                    <div class="font-bold text-pri-900"><?= htmlspecialchars($o['shipping_full_name'] ?? $o['full_name'] ?? 'زائر') ?></div>
                                     <div class="text-[10px] text-gray-500" dir="ltr"><?= htmlspecialchars($o['shipping_phone'] ?? $o['phone'] ?? '') ?></div>
                                 </td>
                                 <td class="font-black text-pri-700"><?= number_format($o['total_amount'], 2) ?> ر.س</td>

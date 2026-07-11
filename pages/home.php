@@ -1,24 +1,18 @@
 <?php
 // مسار الملف: pages/home.php
-// الوظيفة: الواجهة الرئيسية للمتجر (تصميم فاخر، نظيف، وبسيط Luxury Minimalist)
+// الوظيفة: الواجهة الرئيسية الفاخرة للمتجر 
 
-// ═══════════════════════════════════════════
-// 1. جلب بيانات السلايدر
-// ═══════════════════════════════════════════
+// 1. جلب بيانات السلايدر النشطة
 $heroSliders = $pdo->query("SELECT * FROM advertisements WHERE is_active = 1 AND position = 0 ORDER BY display_order")->fetchAll();
 
-// ═══════════════════════════════════════════
-// 2. جلب الأقسام الرئيسية فقط
-// ═══════════════════════════════════════════
+// 2. جلب الأقسام الرئيسية فقط التي تم تحديد إظهارها في الرئيسية
 $mainCategories = $pdo->query("
     SELECT * FROM categories 
     WHERE is_active = 1 AND parent_id IS NULL AND show_on_home = 1
     ORDER BY sort_order
 ")->fetchAll();
 
-// ═══════════════════════════════════════════
-// 3. جلب المنتجات الملموسة "المميزة" (Featured)
-// ═══════════════════════════════════════════
+// 3. جلب أبرز المنتجات الملموسة المميزة (التي ليست منتجات رقمية)
 $featuredProducts = $pdo->query("
     SELECT p.*, c.name as category_name 
     FROM products p 
@@ -27,70 +21,62 @@ $featuredProducts = $pdo->query("
     ORDER BY p.created_at DESC LIMIT 8
 ")->fetchAll();
 
-// ═══════════════════════════════════════════
-// 4. جلب الصوتيات والفيديوهات "المميزة"
-// ═══════════════════════════════════════════
+// 4. جلب الصوتيات والفيديوهات المميزة للعرض في المكتبة الرقمية بالرئيسية
 $featuredAudios = $pdo->query("SELECT a.*, c.name as cat_name FROM audios a LEFT JOIN categories c ON a.category_id = c.id WHERE a.is_active = 1 AND a.is_featured = 1 ORDER BY a.listen_count DESC LIMIT 4")->fetchAll();
 $featuredVideos = $pdo->query("SELECT v.*, c.name as cat_name FROM videos v LEFT JOIN categories c ON v.category_id = c.id WHERE v.is_active = 1 AND v.is_featured = 1 ORDER BY v.view_count DESC LIMIT 3")->fetchAll();
 
-// ═══════════════════════════════════════════
 // 5. الباقات والعروض المميزة
-// ═══════════════════════════════════════════
 $featuredPackages = $pdo->query("SELECT * FROM packages WHERE is_active = 1 AND is_featured = 1 ORDER BY created_at DESC LIMIT 3")->fetchAll();
 
-function formatDuration($seconds) {
-    if (!$seconds) return '';
-    $m = floor($seconds / 60); $s = $seconds % 60;
-    return $m . ':' . str_pad($s, 2, '0', STR_PAD_LEFT);
+if (!function_exists('formatDurationHome')) {
+    function formatDurationHome($seconds) {
+        if (!$seconds) return '';
+        $m = floor($seconds / 60); $s = $seconds % 60;
+        return $m . ':' . str_pad($s, 2, '0', STR_PAD_LEFT);
+    }
 }
 ?>
 
-<!-- ستايل إضافي مخصص للرئيسية لضمان نعومة التصميم -->
 <style>
     .lux-gradient { background: linear-gradient(180deg, #fdfbf7 0%, #ffffff 100%); }
-    .gold-gradient { background: linear-gradient(135deg, #d4af37, #aa7c11); }
-    .green-gradient { background: linear-gradient(135deg, #1b4332, #081c15); }
-    .lux-card { border: 1px solid #f0eae1; box-shadow: 0 4px 20px rgba(0,0,0,0.02); transition: all 0.3s ease; }
-    .lux-card:hover { border-color: #d4af37; box-shadow: 0 10px 30px rgba(212,175,55,0.1); transform: translateY(-3px); }
+    .gold-gradient { background: linear-gradient(135deg, #d4a017, #aa7c11); }
+    .green-gradient { background: linear-gradient(135deg, #1b4332, #0e2f18); }
+    .lux-card { border: 1px solid #f0eae1; box-shadow: 0 4px 20px rgba(0,0,0,0.015); transition: all 0.3s cubic-bezier(.4,0,.2,1); }
+    .lux-card:hover { border-color: #c8a020; box-shadow: 0 12px 30px rgba(200,160,32,0.08); transform: translateY(-4px); }
 </style>
 
-<!-- ═══════════════════════════════════════════════════════
-     1. الهيرو سلايدر (Hero Slider) - نظيف وأنيق
-     ═══════════════════════════════════════════════════════ -->
-<section class="relative w-full h-[75vh] min-h-[500px] overflow-hidden" id="heroSlider">
+<section class="relative w-full h-[70vh] min-h-[460px] overflow-hidden rounded-b-[2rem] sm:rounded-b-[3.5rem] shadow-md" id="heroSlider">
     <?php if (empty($heroSliders)): ?>
-        <div class="hero-slide on absolute inset-0 green-gradient">
-            <div class="absolute inset-0 bg-black/20"></div>
-            <div class="relative z-20 h-full flex flex-col justify-center items-center text-center max-w-4xl mx-auto px-4">
-                <span class="text-gld-300 text-sm font-bold mb-4 tracking-widest uppercase">نقاء، جودة، بركة</span>
-                <h1 class="text-4xl md:text-6xl font-black text-white leading-tight mb-6 font-amiri">تشافي للرقية الشرعية</h1>
-                <p class="text-white/80 text-lg mb-8 max-w-2xl">منتجات طبيعية 100% مقروء عليها آيات الشفاء بأسلوب شرعي موثوق.</p>
-                <a href="index.php?page=products" class="bg-white text-pri-900 font-bold px-8 py-3.5 rounded-full hover:bg-gld-400 transition-colors duration-300">تسوق الآن</a>
+        <div class="hero-slide on absolute inset-0 green-gradient flex items-center justify-center">
+            <div class="absolute inset-0 bg-black/35 z-10"></div>
+            <div class="relative z-20 h-full flex flex-col justify-center items-center text-center max-w-4xl mx-auto px-6">
+                <span class="text-gld-300 text-xs sm:text-sm font-bold mb-4 tracking-widest uppercase bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-sm">نقاء، جودة، بركة</span>
+                <h1 class="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.25] mb-6 font-amiri drop-shadow">تشافي للرقية الشرعية</h1>
+                <p class="text-white/85 text-sm sm:text-lg mb-8 max-w-2xl leading-relaxed">منتجات طبيعية 100% مقروء عليها آيات الشفاء والرقية الشرعية بأسلوب شرعي موثوق.</p>
+                <a href="index.php?page=products" class="bg-white text-pri-900 font-bold px-10 py-4 rounded-full hover:bg-gld-500 hover:text-white transition-all duration-300 shadow-lg hover:shadow-gld-500/20 transform hover:scale-105">تسوق الآن <i class="fas fa-arrow-left mr-1.5 text-xs"></i></a>
             </div>
         </div>
     <?php else: ?>
         <?php foreach ($heroSliders as $index => $slide): ?>
-            <div class="hero-slide <?= $index === 0 ? 'on' : '' ?> absolute inset-0 opacity-0 invisible transition-opacity duration-1000 ease-in-out z-10">
-                <!-- صورة الخلفية مع تأثير تقريب بطيء -->
+            <div class="hero-slide <?= $index === 0 ? 'on' : '' ?> absolute inset-0 opacity-0 invisible transition-opacity duration-1000 ease-in-out z-10 flex items-center justify-center">
                 <div class="absolute inset-0 bg-cover bg-center transform scale-100 transition-transform duration-[10s] ease-out slide-bg" style="background-image: url('<?= htmlspecialchars($slide['image_url']) ?>')"></div>
-                <!-- تدرج لوني لتوضيح النص -->
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/20 z-10"></div>
                 
-                <div class="relative z-20 h-full flex flex-col justify-center items-center text-center max-w-4xl mx-auto px-4">
+                <div class="relative z-20 h-full flex flex-col justify-center items-center text-center max-w-4xl mx-auto px-6">
                     <div class="slide-content transform translate-y-8 opacity-0 transition-all duration-1000 delay-200">
                         <?php if (!empty($slide['subtitle'])): ?>
-                            <span class="text-gld-300 text-sm font-bold mb-4 block tracking-widest uppercase"><?= htmlspecialchars($slide['subtitle']) ?></span>
+                            <span class="text-gld-400 text-xs sm:text-sm font-bold mb-4 inline-block tracking-widest uppercase bg-white/5 border border-white/10 px-4 py-1.5 rounded-full backdrop-blur-sm"><?= htmlspecialchars($slide['subtitle']) ?></span>
                         <?php endif; ?>
-                        <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-[1.2] mb-6 font-amiri">
+                        <h1 class="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.25] mb-6 font-amiri drop-shadow-md">
                             <?= $slide['title'] ?>
                         </h1>
                         <?php if (!empty($slide['description'])): ?>
-                            <p class="text-white/90 text-base md:text-lg mb-8 max-w-2xl mx-auto line-clamp-2">
+                            <p class="text-white/90 text-sm sm:text-base md:text-lg mb-8 max-w-2xl mx-auto leading-relaxed line-clamp-2">
                                 <?= htmlspecialchars($slide['description']) ?>
                             </p>
                         <?php endif; ?>
                         <?php if (!empty($slide['link_url'])): ?>
-                            <a href="<?= htmlspecialchars($slide['link_url']) ?>" class="gold-gradient text-white font-bold px-10 py-4 rounded-full hover:shadow-[0_0_20px_rgba(212,175,55,0.5)] transition-all duration-300 inline-block">
+                            <a href="<?= htmlspecialchars($slide['link_url']) ?>" class="gold-gradient text-white font-bold px-10 py-4 rounded-full hover:shadow-[0_0_25px_rgba(212,175,55,0.4)] transition-all duration-300 inline-block transform hover:scale-105">
                                 <?= htmlspecialchars($slide['link_text'] ?? 'تصفح الآن') ?>
                             </a>
                         <?php endif; ?>
@@ -100,64 +86,107 @@ function formatDuration($seconds) {
         <?php endforeach; ?>
     <?php endif; ?>
     
-    <!-- أزرار التحكم -->
     <?php if (count($heroSliders) > 1): ?>
-        <button class="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white hover:text-pri-900 backdrop-blur-sm transition" onclick="heroNav(1)"><i class="fas fa-chevron-right text-sm"></i></button>
-        <button class="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white hover:text-pri-900 backdrop-blur-sm transition" onclick="heroNav(-1)"><i class="fas fa-chevron-left text-sm"></i></button>
-        <div class="hero-dots flex gap-2 absolute bottom-8 left-1/2 -translate-x-1/2 z-30" id="heroDots"></div>
+        <button class="absolute right-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white hover:text-pri-900 backdrop-blur-md transition-all border border-white/10" onclick="heroNav(1)"><i class="fas fa-chevron-right text-xs"></i></button>
+        <button class="absolute left-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white hover:text-pri-900 backdrop-blur-md transition-all border border-white/10" onclick="heroNav(-1)"><i class="fas fa-chevron-left text-xs"></i></button>
+        <div class="hero-dots flex gap-2 absolute bottom-6 left-1/2 -translate-x-1/2 z-30" id="heroDots"></div>
     <?php endif; ?>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════
-     2. شريط الثقة (Minimalist Trust Bar)
-     ═══════════════════════════════════════════════════════ -->
-<div class="border-b border-gray-100 bg-white">
-    <div class="max-w-7xl mx-auto px-4 py-4 sm:py-6">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center divide-x-0 md:divide-x md:divide-x-reverse divide-gray-100">
-            <div class="flex flex-col items-center justify-center gap-2">
-                <i class="fas fa-leaf text-pri-600 text-xl"></i>
-                <span class="text-xs font-bold text-gray-800">منتجات طبيعية 100%</span>
+<div class="max-w-7xl mx-auto px-4 -mt-10 relative z-40 mb-12 afiu">
+    <div class="bg-white rounded-3xl p-5 sm:p-7 flex flex-wrap items-center justify-center gap-6 sm:gap-12 shadow-xl border border-[#f0eae1]">
+        <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-2xl bg-pri-50 text-pri-600 flex items-center justify-center text-lg"><i class="fas fa-leaf"></i></div>
+            <div>
+                <h4 class="font-bold text-pri-900 text-xs sm:text-sm">طبيعي وأصلي 100%</h4>
+                <p class="text-[10px] text-brk-400">عسل وزيوت مختبرة مخبرياً</p>
             </div>
-            <div class="flex flex-col items-center justify-center gap-2">
-                <i class="fas fa-truck-fast text-pri-600 text-xl"></i>
-                <span class="text-xs font-bold text-gray-800">شحن سريع وآمن</span>
+        </div>
+        <div class="hidden md:block w-px h-8 bg-gray-100"></div>
+        <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-2xl bg-gld-50 text-gld-600 flex items-center justify-center text-lg"><i class="fas fa-headphones"></i></div>
+            <div>
+                <h4 class="font-bold text-pri-900 text-xs sm:text-sm">رقية شرعية موثوقة</h4>
+                <p class="text-[10px] text-brk-400">بأصوات نخبة من القراء والمشايخ</p>
             </div>
-            <div class="flex flex-col items-center justify-center gap-2">
-                <i class="fas fa-shield-alt text-pri-600 text-xl"></i>
-                <span class="text-xs font-bold text-gray-800">دفع إلكتروني مشفر</span>
-            </div>
-            <div class="flex flex-col items-center justify-center gap-2">
-                <i class="fas fa-medal text-pri-600 text-xl"></i>
-                <span class="text-xs font-bold text-gray-800">جودة شرعية معتمدة</span>
+        </div>
+        <div class="hidden lg:block w-px h-8 bg-gray-100"></div>
+        <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center text-lg"><i class="fas fa-truck-fast"></i></div>
+            <div>
+                <h4 class="font-bold text-pri-900 text-xs sm:text-sm">توصيل آمن وسريع</h4>
+                <p class="text-[10px] text-brk-400">لباب المنزل بكل مدن المملكة</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════
-     3. الأقسام الرئيسية (Categories - Circular Layout)
-     ═══════════════════════════════════════════════════════ -->
+<section class="py-12 bg-transparent relative overflow-hidden mb-8">
+    <div class="max-w-7xl mx-auto px-4 relative z-10 afiu" style="animation-delay: 0.1s">
+        <div class="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8 sm:p-12">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                
+                <!-- النص (يمين) -->
+                <div class="lg:col-span-6 order-2 lg:order-1">
+                    <div class="mb-6 flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-gld-50 text-gld-600 flex items-center justify-center text-xl shadow-sm border border-gld-100">
+                            <i class="fas fa-quote-right"></i>
+                        </div>
+                        <h2 class="text-3xl font-black text-pri-900 font-amiri border-b-2 border-gld-200 pb-2 inline-block">كلمة الشيخ</h2>
+                    </div>
+                    
+                    <div class="text-lg leading-loose text-brk-600 space-y-4">
+                        <p class="font-bold text-pri-800 text-xl mb-4 font-amiri">بسم الله الرحمن الرحيم والصلاة والسلام على أشرف الأنبياء والمرسلين سيدنا محمد وآله وصحبه أجمعين أما بعد..</p>
+                        
+                        <p>قال صلى الله عليه وسلم: <span class="text-gld-700 font-bold font-amiri text-xl bg-gld-50 px-2 py-0.5 rounded">(خير الناس أنفعهم للناس)</span>، وقال أيضًا: <span class="text-gld-700 font-bold font-amiri text-xl bg-gld-50 px-2 py-0.5 rounded">(من استطاع منكم أن ينفع أخاه فليفعل)</span>.</p>
+                        
+                        <p>فأسأل الله العظيم بأن ينفع بمحتوى هذا الموقع كل من أراد الفائدة، وأسأله سبحانه أن يجعل هذا العمل خالصاً لوجهه الكريم وعمل ينتفع به.</p>
+                        
+                        <div class="font-bold text-pri-800 bg-pri-50 p-5 rounded-2xl border-r-4 border-pri-500 mt-8 text-xl font-amiri leading-loose">
+                            أسأل الله العلي العظيم أن يشفى كل مريض ويهدي كل ضال وأن يغفر لنا ولجميع المسلمين إنه غفور رحيم.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- الصورة (يسار) -->
+                <div class="lg:col-span-6 order-1 lg:order-2 relative">
+                    <!-- خلفيات زخرفية للصورة -->
+                    <div class="absolute inset-0 bg-gld-500 rounded-[2rem] transform rotate-3 scale-105 opacity-10"></div>
+                    <div class="absolute inset-0 bg-pri-500 rounded-[2rem] transform -rotate-3 scale-105 opacity-10"></div>
+                    
+                    <div class="relative rounded-[2rem] overflow-hidden shadow-lg border-4 border-white aspect-[4/3] lg:aspect-square bg-gray-100 flex items-center justify-center">
+                        <img src="../assets/images/home.jpg" alt="كلمة الشيخ" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
 <?php if (!empty($mainCategories)): ?>
-<section class="py-16 lux-gradient">
+<section class="py-10 mb-12">
     <div class="max-w-7xl mx-auto px-4 afiu">
-        <div class="text-center mb-12">
-            <h2 class="text-3xl font-black text-pri-900 font-amiri mb-2">أقسام المتجر</h2>
-            <div class="w-16 h-1 bg-gld-500 mx-auto rounded-full"></div>
+        <div class="text-center mb-10">
+            <span class="text-gld-600 text-xs font-bold tracking-widest uppercase block mb-2">أقسامنا العلمية والشرعية</span>
+            <h2 class="text-2xl sm:text-3xl font-black text-pri-900 font-amiri">أقسام متجر تشافي</h2>
+            <div class="w-16 h-1 bg-gld-500 mx-auto rounded-full mt-3"></div>
         </div>
 
-        <!-- شبكة مرنة ومستقرة للأقسام -->
-        <div class="flex flex-wrap justify-center gap-6 sm:gap-10">
-            <?php foreach ($mainCategories as $cat): ?>
-            <a href="index.php?page=category&category_id=<?= $cat['id'] ?>" class="group flex flex-col items-center text-center w-28 sm:w-36 no-underline">
-                <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-white border-2 border-gray-100 flex items-center justify-center text-3xl sm:text-4xl text-pri-700 mb-4 group-hover:border-gld-500 group-hover:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all duration-300 relative overflow-hidden">
-                    <!-- إذا كان للقسم صورة نضعها هنا، وإلا نضع الأيقونة -->
+        <div class="flex flex-wrap justify-center gap-6 sm:gap-12">
+            <?php foreach ($mainCategories as $cat): 
+                $cColor = $cat['color_hex'] ?? '#1a582a';
+            ?>
+            <a href="index.php?page=category&category_id=<?= $cat['id'] ?>" class="group flex flex-col items-center text-center w-28 sm:w-32 no-underline">
+                <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white border border-[#f0eae1] flex items-center justify-center text-2xl sm:text-3xl mb-3.5 group-hover:border-gld-500 group-hover:shadow-[0_0_20px_rgba(200,160,32,0.15)] transition-all duration-300 relative overflow-hidden" style="color: <?= $cColor ?>">
+                    <div class="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300" style="background-color: <?= $cColor ?>"></div>
                     <?php if (!empty($cat['image_url'])): ?>
                         <img src="<?= htmlspecialchars($cat['image_url']) ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                     <?php else: ?>
                         <i class="<?= $cat['icon_class'] ?? 'fas fa-folder' ?> group-hover:scale-110 transition-transform duration-300"></i>
                     <?php endif; ?>
                 </div>
-                <h3 class="font-bold text-gray-800 text-sm sm:text-base group-hover:text-gld-600 transition-colors"><?= htmlspecialchars($cat['name']) ?></h3>
+                <h3 class="font-bold text-gray-800 text-xs sm:text-sm group-hover:text-gld-600 transition-colors leading-relaxed"><?= htmlspecialchars($cat['name']) ?></h3>
             </a>
             <?php endforeach; ?>
         </div>
@@ -165,104 +194,47 @@ function formatDuration($seconds) {
 </section>
 <?php endif; ?>
 
-<!-- ═══════════════════════════════════════════════════════
-     4. المنتجات المميزة (Featured Products - Clean Cards)
-     ═══════════════════════════════════════════════════════ -->
-<?php if (!empty($featuredProducts)): ?>
-<section class="py-16 bg-white">
-    <div class="max-w-7xl mx-auto px-4 afiu">
-        <div class="flex items-center justify-between mb-10 border-b border-gray-100 pb-4">
-            <h2 class="text-2xl sm:text-3xl font-black text-pri-900 font-amiri">وصل حديثاً و الأكثر طلباً</h2>
-            <a href="index.php?page=products" class="text-sm font-bold text-pri-600 hover:text-gld-600 transition flex items-center gap-1">عرض الكل <i class="fas fa-arrow-left text-[10px]"></i></a>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            <?php foreach ($featuredProducts as $prod): 
-                $hasDisc = $prod['old_price'] > $prod['price'];
-            ?>
-            <div class="lux-card bg-white rounded-2xl overflow-hidden group relative flex flex-col">
-                <!-- شارة الخصم -->
-                <?php if ($hasDisc): ?>
-                    <span class="absolute top-3 right-3 z-10 bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">-<?= round((1 - $prod['price'] / $prod['old_price']) * 100) ?>%</span>
-                <?php endif; ?>
-                
-                <!-- زر المفضلة -->
-                <button onclick="toggleWishlist(<?= $prod['id'] ?>, 'product', this)" class="absolute top-3 left-3 z-10 w-8 h-8 bg-white rounded-full flex items-center justify-center text-gray-300 hover:text-red-500 shadow-sm transition">
-                    <i class="fas fa-heart text-sm"></i>
-                </button>
-
-                <!-- صورة المنتج (مساحة بيضاء كبيرة) -->
-                <a href="index.php?page=product_details&id=<?= $prod['id'] ?>" class="block relative aspect-square bg-[#fbfbfb] p-4">
-                    <img src="<?= htmlspecialchars($prod['image_url']) ?>" alt="<?= htmlspecialchars($prod['name']) ?>" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" loading="lazy">
-                </a>
-
-                <!-- تفاصيل المنتج -->
-                <div class="p-4 flex flex-col flex-1 bg-white">
-                    <?php if (!empty($prod['category_name'])): ?>
-                        <div class="text-[10px] text-gld-600 font-bold mb-1 uppercase tracking-wider"><?= htmlspecialchars($prod['category_name']) ?></div>
-                    <?php endif; ?>
-                    
-                    <h4 class="font-bold text-gray-900 text-sm mb-2 leading-relaxed line-clamp-2 flex-1"><a href="index.php?page=product_details&id=<?= $prod['id'] ?>" class="no-underline text-inherit"><?= htmlspecialchars($prod['name']) ?></a></h4>
-                    
-                    <div class="flex items-center justify-between mt-3">
-                        <div>
-                            <?php if ($hasDisc): ?>
-                                <div class="text-gray-400 text-[11px] line-through mb-0.5"><?= number_format($prod['old_price'], 2) ?> ر.س</div>
-                            <?php endif; ?>
-                            <div class="text-pri-700 font-black text-lg"><?= number_format($prod['price'], 2) ?> <span class="text-[10px] font-bold">ر.س</span></div>
-                        </div>
-                        <button onclick="event.preventDefault(); addToCart(<?= $prod['id'] ?>, 1)" class="w-10 h-10 rounded-full bg-pri-50 text-pri-700 flex items-center justify-center hover:bg-pri-600 hover:text-white transition-colors duration-300" title="إضافة للسلة">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-</section>
-<?php endif; ?>
-
-<!-- ═══════════════════════════════════════════════════════
-     5. الباقات الفاخرة (Premium Packages - Dark Mode)
-     ═══════════════════════════════════════════════════════ -->
 <?php if (!empty($featuredPackages)): ?>
-<section class="py-20 green-gradient relative overflow-hidden">
-    <!-- زخرفة ذهبية خافتة في الخلفية -->
+<section class="py-20 green-gradient relative overflow-hidden mb-12">
     <div class="absolute top-0 right-0 w-96 h-96 bg-gld-500/10 rounded-full blur-[100px] pointer-events-none"></div>
     <div class="absolute bottom-0 left-0 w-96 h-96 bg-pri-500/20 rounded-full blur-[100px] pointer-events-none"></div>
 
     <div class="max-w-7xl mx-auto px-4 relative z-10 afiu">
         <div class="text-center mb-14">
-            <span class="text-gld-400 font-bold text-sm tracking-widest uppercase mb-2 block">توفير وحماية</span>
-            <h2 class="text-3xl sm:text-4xl font-black text-white font-amiri mb-4">الباقات الحصرية</h2>
-            <div class="w-16 h-1 bg-gld-500 mx-auto rounded-full"></div>
+            <span class="text-gld-400 font-bold text-xs tracking-widest uppercase mb-2 block">حماية وبركة بأسعار توفيرية</span>
+            <h2 class="text-3xl sm:text-4xl font-black text-white font-amiri mb-3">الباقات والعروض</h2>
+            <div class="w-16 h-1 bg-gld-500 mx-auto rounded-full mt-3"></div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
             <?php foreach ($featuredPackages as $pkg): 
                 $savings = $pkg['original_total_price'] > 0 ? round((($pkg['original_total_price'] - $pkg['package_price']) / $pkg['original_total_price']) * 100) : 0;
             ?>
-                <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 text-center hover:bg-white/10 hover:border-gld-500/50 transition-all duration-500 group relative">
-                    <div class="absolute top-0 right-1/2 translate-x-1/2 -translate-y-1/2 bg-gld-500 text-white text-[10px] font-bold px-4 py-1 rounded-full uppercase tracking-widest shadow-md">باقة مميزة</div>
+                <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2rem] p-6 text-center hover:bg-white/10 hover:border-gld-500/50 transition-all duration-500 group relative flex flex-col justify-between">
+                    <div class="absolute top-0 right-1/2 translate-x-1/2 -translate-y-1/2 bg-gld-500 text-white text-[9px] font-bold px-5 py-1 rounded-full uppercase tracking-wider shadow-md">باقة مخصصة</div>
                     
-                    <div class="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-white/10 mb-6 group-hover:scale-105 transition-transform duration-500">
-                        <img src="<?= htmlspecialchars($pkg['image_url'] ?? 'https://picsum.photos/400') ?>" alt="<?= htmlspecialchars($pkg['name']) ?>" class="w-full h-full object-cover">
+                    <div>
+                        <div class="w-28 h-28 mx-auto rounded-full overflow-hidden border-4 border-white/15 mb-6 group-hover:scale-105 transition-transform duration-500 shadow-lg">
+                            <img src="<?= htmlspecialchars($pkg['image_url'] ?? 'https://picsum.photos/400') ?>" alt="<?= htmlspecialchars($pkg['name']) ?>" class="w-full h-full object-cover">
+                        </div>
+                        
+                        <h3 class="text-lg sm:text-xl font-bold text-white mb-2 font-amiri leading-snug"><?= htmlspecialchars($pkg['name']) ?></h3>
+                        <?php if (!empty($pkg['short_description'])): ?>
+                            <p class="text-gray-300 text-xs mb-6 line-clamp-2 leading-relaxed"><?= htmlspecialchars($pkg['short_description']) ?></p>
+                        <?php endif; ?>
                     </div>
                     
-                    <h3 class="text-xl font-bold text-white mb-2 font-amiri"><?= htmlspecialchars($pkg['name']) ?></h3>
-                    <?php if (!empty($pkg['short_description'])): ?>
-                        <p class="text-gray-300 text-sm mb-6 line-clamp-2"><?= htmlspecialchars($pkg['short_description']) ?></p>
-                    <?php endif; ?>
-                    
-                    <div class="bg-black/20 rounded-2xl p-4 mb-6">
-                        <div class="text-gray-400 text-xs line-through mb-1">بدلاً من <?= number_format($pkg['original_total_price'], 2) ?> ر.س</div>
-                        <div class="text-3xl font-black text-gld-400"><?= number_format($pkg['package_price'], 2) ?> <span class="text-sm">ر.س</span></div>
+                    <div>
+                        <div class="bg-black/25 rounded-2xl p-4 mb-6">
+                            <div class="text-gray-400 text-xs line-through mb-1">بدلاً من <?= number_format($pkg['original_total_price'], 2) ?> ر.س</div>
+                            <!-- إصلاح مسافة العملات لضمان تحويلها -->
+                            <div class="text-2xl sm:text-3xl font-black text-gld-400"><?= number_format($pkg['package_price'], 2) ?> ر.س</div>
+                        </div>
+                        
+                        <a href="index.php?page=package_details&id=<?= $pkg['id'] ?>" class="block w-full py-3.5 rounded-full border border-gld-500 text-gld-400 font-bold hover:bg-gld-500 hover:text-pri-900 transition-all duration-300 shadow-sm text-sm">
+                            عرض التفاصيل والبرنامج العلاجي
+                        </a>
                     </div>
-                    
-                    <a href="index.php?page=package_details&id=<?= $pkg['id'] ?>" class="block w-full py-3.5 rounded-full border border-gld-500 text-gld-400 font-bold hover:bg-gld-500 hover:text-pri-900 transition-colors duration-300">
-                        عرض التفاصيل
-                    </a>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -270,35 +242,34 @@ function formatDuration($seconds) {
 </section>
 <?php endif; ?>
 
-<!-- ═══════════════════════════════════════════════════════
-     6. المكتبة الرقمية (Clean List View)
-     ═══════════════════════════════════════════════════════ -->
 <?php if (!empty($featuredAudios) || !empty($featuredVideos)): ?>
-<section class="py-16 bg-white">
+<section class="py-16 bg-white mb-12 border-y border-gray-50">
     <div class="max-w-7xl mx-auto px-4 afiu">
-        <div class="text-center mb-12">
-            <h2 class="text-3xl font-black text-pri-900 font-amiri mb-2">المكتبة الرقمية</h2>
-            <div class="w-16 h-1 bg-gld-500 mx-auto rounded-full"></div>
-            <p class="text-gray-500 text-sm mt-4">رقيات صوتية ودروس مرئية مختارة.</p>
+        <div class="text-center mb-14">
+            <span class="text-gld-600 text-xs font-bold tracking-widest uppercase block mb-2">مكتبة رقمية غنية</span>
+            <h2 class="text-2xl sm:text-3xl font-black text-pri-900 font-amiri">الصوتيات والفيديوهات</h2>
+            <div class="w-16 h-1 bg-gld-500 mx-auto rounded-full mt-3"></div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <!-- الصوتيات (List View) -->
+            <!-- قسم الصوتيات -->
             <?php if (!empty($featuredAudios)): ?>
-            <div>
-                <h3 class="font-bold text-lg mb-6 flex items-center gap-2 border-b border-gray-100 pb-3"><i class="fas fa-headphones text-pri-600"></i> الصوتيات</h3>
+            <div class="bg-gray-50/50 rounded-[2rem] p-6 sm:p-8 border border-gray-100">
+                <h3 class="font-bold text-base sm:text-lg mb-6 flex items-center gap-2.5 border-b border-gray-100 pb-4 text-pri-900"><i class="fas fa-headphones text-pri-600"></i> الصوتيات</h3>
                 <div class="space-y-3">
                     <?php foreach ($featuredAudios as $audio): ?>
-                    <a href="index.php?page=audio_details&id=<?= $audio['id'] ?>" class="flex items-center gap-4 p-3 rounded-2xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition group no-underline">
-                        <div class="w-12 h-12 rounded-full bg-pri-50 text-pri-600 flex items-center justify-center shrink-0 group-hover:bg-pri-600 group-hover:text-white transition-colors">
-                            <i class="fas fa-play text-sm ml-1"></i>
+                    <a href="index.php?page=audio_details&id=<?= $audio['id'] ?>" class="flex items-center gap-4 p-3.5 rounded-2xl bg-white border border-transparent hover:border-gld-200 hover:shadow-md transition-all duration-300 group no-underline">
+                        <div class="w-11 h-11 rounded-full bg-pri-50 text-pri-600 flex items-center justify-center shrink-0 group-hover:bg-pri-600 group-hover:text-white transition-colors duration-300">
+                            <i class="fas fa-play text-xs ml-1"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h4 class="font-bold text-gray-900 text-sm truncate"><?= htmlspecialchars($audio['title']) ?></h4>
-                            <p class="text-xs text-gray-500 truncate"><?= htmlspecialchars($audio['narrator'] ?? 'الرقية الشرعية') ?></p>
+                            <h4 class="font-bold text-gray-900 text-xs sm:text-sm truncate group-hover:text-pri-700 transition-colors"><?= htmlspecialchars($audio['title']) ?></h4>
+                            <p class="text-[10px] text-gray-500 mt-1 truncate">القارئ: <?= htmlspecialchars($audio['narrator'] ?? 'الرقية الشرعية') ?></p>
                         </div>
                         <div class="text-left shrink-0">
-                            <div class="font-bold text-pri-700 text-sm"><?= $audio['price'] > 0 ? number_format($audio['price'], 0) . ' ر.س' : '<span class="text-green-600">مجاني</span>' ?></div>
+                            <div class="text-[10px] text-gray-400 mb-1"><?= formatDurationHome($audio['audio_duration']) ?> دقيقة</div>
+                            <!-- إصلاح مسافة العملات -->
+                            <div class="font-bold text-pri-700 text-xs sm:text-sm"><?= $audio['price'] > 0 ? number_format($audio['price'], 2) . ' ر.س' : '<span class="text-green-600">متاح</span>' ?></div>
                         </div>
                     </a>
                     <?php endforeach; ?>
@@ -306,21 +277,21 @@ function formatDuration($seconds) {
             </div>
             <?php endif; ?>
 
-            <!-- الفيديوهات (Minimal Cards) -->
+            <!-- قسم الفيديوهات -->
             <?php if (!empty($featuredVideos)): ?>
-            <div>
-                <h3 class="font-bold text-lg mb-6 flex items-center gap-2 border-b border-gray-100 pb-3"><i class="fas fa-video text-gld-600"></i> الدروس المرئية</h3>
+            <div class="bg-gray-50/50 rounded-[2rem] p-6 sm:p-8 border border-gray-100">
+                <h3 class="font-bold text-base sm:text-lg mb-6 flex items-center gap-2.5 border-b border-gray-100 pb-4 text-pri-900"><i class="fas fa-video text-gld-600"></i> الدروس والمحاضرات المرئية</h3>
                 <div class="grid grid-cols-2 gap-4">
                     <?php foreach (array_slice($featuredVideos, 0, 2) as $video): ?>
                     <a href="index.php?page=video_details&id=<?= $video['id'] ?>" class="block group no-underline">
-                        <div class="relative aspect-video rounded-xl overflow-hidden bg-gray-900 mb-3">
+                        <div class="relative aspect-video rounded-2xl overflow-hidden bg-gray-900 mb-3 shadow-sm group-hover:shadow-md transition-shadow">
                             <img src="<?= htmlspecialchars($video['thumbnail_url'] ?? 'https://picsum.photos/400/225') ?>" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" loading="lazy">
                             <div class="absolute inset-0 flex items-center justify-center">
-                                <div class="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center text-pri-900 shadow-md group-hover:scale-110 transition-transform"><i class="fas fa-play ml-0.5"></i></div>
+                                <div class="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center text-pri-900 shadow-md group-hover:scale-110 transition-transform duration-300"><i class="fas fa-play ml-0.5"></i></div>
                             </div>
                         </div>
-                        <h4 class="font-bold text-gray-900 text-sm line-clamp-2"><?= htmlspecialchars($video['title']) ?></h4>
-                        <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars($video['presenter'] ?? '') ?></p>
+                        <h4 class="font-bold text-gray-900 text-xs leading-relaxed line-clamp-2 group-hover:text-pri-700 transition-colors"><?= htmlspecialchars($video['title']) ?></h4>
+                        <p class="text-[10px] text-gray-500 mt-1"><i class="fas fa-user-circle ml-1"></i><?= htmlspecialchars($video['presenter'] ?? '') ?></p>
                     </a>
                     <?php endforeach; ?>
                 </div>
@@ -331,7 +302,49 @@ function formatDuration($seconds) {
 </section>
 <?php endif; ?>
 
-<!-- سكريبت السلايدر -->
+<?php if (!empty($featuredProducts)): ?>
+<section class="py-14 bg-white border-b border-gray-50">
+    <div class="max-w-7xl mx-auto px-4 afiu">
+        <div class="flex items-end justify-between mb-10 border-b border-gray-100 pb-5">
+            <div>
+                <span class="text-gld-600 text-xs font-bold tracking-widest uppercase block mb-1">المنتجات الطبيعية والمقروء عليها</span>
+                <h2 class="text-2xl sm:text-3xl font-black text-pri-900 font-amiri">المنتجات الأكثر مبيعاً والجديدة</h2>
+            </div>
+            <a href="index.php?page=products" class="text-xs sm:text-sm font-bold text-pri-600 hover:text-gld-600 transition flex items-center gap-1.5">عرض الكل <i class="fas fa-arrow-left text-[10px]"></i></a>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <?php foreach ($featuredProducts as $prod):
+                $hasDisc = $prod['old_price'] > $prod['price'];
+                $discPct = $hasDisc ? round((1 - $prod['price'] / $prod['old_price']) * 100) : 0;
+            ?>
+            <div class="prod-card group">
+                <?php if ($hasDisc): ?><span class="prod-badge offer">خصم <?= $discPct ?>%</span><?php endif; ?>
+                <a href="index.php?page=product_details&id=<?= $prod['id'] ?>" class="block no-underline">
+                    <div class="prod-img-w">
+                        <img src="<?= htmlspecialchars($prod['image_url']) ?>" alt="<?= htmlspecialchars($prod['name']) ?>" loading="lazy">
+                    </div>
+                    <div class="p-4 flex flex-col flex-1">
+                        <h4 class="font-bold text-pri-900 text-sm mb-1.5 leading-relaxed line-clamp-2" style="min-height:40px"><?= htmlspecialchars($prod['name']) ?></h4>
+                        <div class="mt-auto flex items-center justify-between pt-3 border-t border-gray-50">
+                            <div>
+                                <?php if ($hasDisc): ?>
+                                    <span class="text-brk-300 text-xs line-through ml-1"><?= number_format($prod['old_price'], 2) ?> ر.س</span>
+                                <?php endif; ?>
+                                <!-- إصلاح مسافة العملات -->
+                                <span class="text-pri-700 font-black text-lg"><?= number_format($prod['price'], 2) ?> ر.س</span>
+                            </div>
+                            <button onclick="event.preventDefault(); addToCart('product', <?= $prod['id'] ?>)" class="cf-btn cf-btn-pri cf-btn-sm text-xs py-2 px-3"><i class="fas fa-cart-plus"></i></button>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     let slideIndex = 0;
@@ -342,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (slides.length > 0) {
         slides.forEach((_, i) => {
             let dot = document.createElement('div');
-            dot.className = `w-10 h-1.5 rounded-full cursor-pointer transition-all duration-300 ${i === 0 ? 'bg-gld-500' : 'bg-white/40 hover:bg-white/70'}`;
+            dot.className = `w-10 h-1 rounded-full cursor-pointer transition-all duration-300 ${i === 0 ? 'bg-gld-500' : 'bg-white/40 hover:bg-white/70'}`;
             dot.onclick = () => { showSlide(i); resetInterval(); };
             if(dotsContainer) dotsContainer.appendChild(dot);
         });

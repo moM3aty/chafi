@@ -1,6 +1,5 @@
 <?php
 // مسار الملف: pages/category.php
-// الوظيفة: عرض القسم الشامل (تعريف + أقسام فرعية + منتجات + ملفات + صوتيات + فيديوهات)
 
 $id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 
@@ -22,7 +21,6 @@ if (!$category) {
     return;
 }
 
-// دالة عودية لجلب كل الفروع التابعة (لعرض محتوى الفروع داخل القسم الأب)
 function getDescendantIds($pdo, $catId) {
     $ids = [$catId];
     $stmt = $pdo->prepare("SELECT id FROM categories WHERE parent_id = ? AND is_active = 1");
@@ -36,12 +34,12 @@ function getDescendantIds($pdo, $catId) {
 $allIds = getDescendantIds($pdo, $id);
 $idsPlaceholder = implode(',', $allIds);
 
-// 2. جلب الأقسام الفرعية (المباشرة فقط لعرضها كبطاقات)
+// 2. جلب الأقسام الفرعية
 $childrenStmt = $pdo->prepare("SELECT * FROM categories WHERE parent_id = ? AND is_active = 1 ORDER BY sort_order");
 $childrenStmt->execute([$id]);
 $subCategories = $childrenStmt->fetchAll();
 
-// 3. بناء مسار التنقل (Breadcrumb)
+// 3. مسار التنقل
 $breadcrumb = [];
 $tempId = $id;
 while ($tempId) {
@@ -53,19 +51,14 @@ while ($tempId) {
     $tempId = $c['parent_id'];
 }
 
-// 4. جلب المحتوى مقسماً حسب النوع
-// المنتجات الملموسة
+// 4. المحتوى
 $products = $pdo->query("SELECT * FROM products WHERE category_id IN ($idsPlaceholder) AND is_digital = 0 AND is_active = 1 ORDER BY is_featured DESC, id DESC")->fetchAll();
-// الملفات الرقمية والكتب (is_digital = 1)
 $digitalFiles = $pdo->query("SELECT * FROM products WHERE category_id IN ($idsPlaceholder) AND is_digital = 1 AND is_active = 1 ORDER BY id DESC")->fetchAll();
-// الصوتيات
 $audios = $pdo->query("SELECT * FROM audios WHERE category_id IN ($idsPlaceholder) AND is_active = 1 ORDER BY listen_count DESC")->fetchAll();
-// الفيديوهات
 $videos = $pdo->query("SELECT * FROM videos WHERE category_id IN ($idsPlaceholder) AND is_active = 1 ORDER BY view_count DESC")->fetchAll();
 
 $catColor = $category['color_hex'] ?? '#1a582a';
 
-// تحديد التبويب الافتراضي النشط (أول تبويب يحتوي على بيانات)
 $defaultTab = 'products';
 if (empty($products) && !empty($digitalFiles)) $defaultTab = 'files';
 if (empty($products) && empty($digitalFiles) && !empty($audios)) $defaultTab = 'audios';
@@ -92,32 +85,35 @@ function formatDur($sec) {
         <?php endforeach; ?>
     </nav>
 
-    <!-- 1. تعريف القسم (Intro) -->
+    <!-- 1. تعريف القسم (Intro) - تم إزالة htmlspecialchars ليعمل الـ HTML بنجاح -->
     <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-10 afiu" style="animation-delay:.05s">
         <div class="p-8 sm:p-12 relative overflow-hidden">
-            <!-- خلفية زخرفية -->
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r" style="background-image: linear-gradient(to right, <?= $catColor ?>, <?= $catColor ?>88)"></div>
             <div class="absolute -left-20 -top-20 w-64 h-64 rounded-full opacity-5 pointer-events-none" style="background-color: <?= $catColor ?>"></div>
             
-            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6 relative z-10">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6 relative z-10 mb-8 border-b border-gray-100 pb-8">
                 <div class="w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-2xl flex items-center justify-center text-4xl shadow-lg text-white" style="background: linear-gradient(135deg, <?= $catColor ?>, <?= $catColor ?>dd)">
                     <i class="<?= $category['icon_class'] ?? 'fas fa-folder-open' ?>"></i>
                 </div>
                 <div class="flex-1">
-                    <h1 class="text-3xl sm:text-4xl font-black text-pri-900 font-amiri mb-3 leading-tight"><?= htmlspecialchars($category['name']) ?></h1>
-                    <?php if (!empty($category['description'])): ?>
-                        <div class="prose prose-sm max-w-none text-brk-600 leading-relaxed">
-                            <?= nl2br(htmlspecialchars($category['description'])) ?>
-                        </div>
-                    <?php else: ?>
-                        <p class="text-brk-400 text-sm">تصفح محتوى هذا القسم من منتجات وصوتيات وفيديوهات.</p>
-                    <?php endif; ?>
+                    <h1 class="text-3xl sm:text-4xl font-black text-pri-900 font-amiri leading-tight"><?= htmlspecialchars($category['name']) ?></h1>
                 </div>
+            </div>
+
+            <div class="relative z-10 text-pri-900">
+                <?php if (!empty($category['description'])): ?>
+                    <div class="custom-html-content">
+                        <!-- هنا يتم طباعة الكود كما هو لكي يعمل التصميم -->
+                        <?= $category['description'] ?>
+                    </div>
+                <?php else: ?>
+                    <p class="text-brk-400 text-sm">تصفح محتوى هذا القسم من منتجات وصوتيات وفيديوهات.</p>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 
-    <!-- 2. الأقسام الفرعية (إن وجدت) -->
+    <!-- 2. الأقسام الفرعية -->
     <?php if (!empty($subCategories)): ?>
     <div class="mb-12 afiu" style="animation-delay:.1s">
         <h3 class="text-xl font-black text-pri-900 font-amiri mb-5 border-r-4 pr-3 flex items-center gap-2" style="border-color: <?= $catColor ?>">
@@ -295,20 +291,16 @@ function formatDur($sec) {
 
 <script>
 function switchCatTab(tabName, btn) {
-    // إخفاء كل التبويبات والمحتوى
     document.querySelectorAll('.tab-content').forEach(el => { el.classList.add('hidden'); el.classList.remove('block'); });
     document.querySelectorAll('.ct-tab').forEach(el => { el.classList.remove('on'); el.classList.replace('bg-white', 'bg-transparent'); });
     
-    // إظهار التبويب المطلوب
     const panel = document.getElementById('tab-' + tabName);
     panel.classList.remove('hidden');
     panel.classList.add('block');
     
-    // تفعيل الزر
     btn.classList.add('on', 'bg-white', 'shadow-sm');
 }
 
-// تفعيل استايل التبويب النشط عند التحميل
 document.addEventListener('DOMContentLoaded', () => {
     const activeTab = document.querySelector('.ct-tab.on');
     if(activeTab) {

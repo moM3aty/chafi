@@ -19,18 +19,53 @@ if (empty($cartItems)) {
     exit;
 }
 
-// 1. حساب السلة
+// 1. حساب السلة (النظام الذكي الشامل)
 $subTotal = 0;
-$ids = implode(',', array_keys($cartItems));
-$stmt = $pdo->query("SELECT id, name, price, image_url, stock_quantity FROM products WHERE id IN ($ids)");
-$productsInCart = $stmt->fetchAll();
+$hasPhysicalItems = false;
+$finalItems = [];
 
-foreach ($productsInCart as $item) {
-    $qty = min($cartItems[$item['id']], $item['stock_quantity']); // تأمين المخزون
-    $subTotal += $item['price'] * $qty;
+foreach ($cartItems as $key => $item) {
+    if (!is_array($item)) continue; // تخطي أي بيانات تالفة
+    
+    $table = 'products'; $nameCol = 'name'; $priceCol = 'price'; $imgCol = 'image_url';
+    if ($item['type'] === 'audio') { $table = 'audios'; $nameCol = 'title'; $imgCol = 'thumbnail_url'; }
+    elseif ($item['type'] === 'video') { $table = 'videos'; $nameCol = 'title'; $imgCol = 'thumbnail_url'; }
+    elseif ($item['type'] === 'package') { $table = 'packages'; $priceCol = 'package_price'; }
+    
+    $query = "SELECT id, $nameCol as name, $priceCol as price, $imgCol as image";
+    if ($item['type'] === 'product') {
+        $query .= ", stock_quantity, is_digital";
+    }
+    $query .= " FROM $table WHERE id = ?";
+    
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([$item['id']]);
+    $dbItem = $stmt->fetch();
+    
+    if ($dbItem) {
+        $qty = $item['qty'];
+        $stock = 99999;
+        
+        if ($item['type'] === 'product' && $dbItem['is_digital'] == 0) {
+            $stock = $dbItem['stock_quantity'];
+            $hasPhysicalItems = true;
+        }
+        
+        $newQty = min($qty, $stock);
+        if ($newQty <= 0) continue;
+        
+        $subTotal += $dbItem['price'] * $newQty;
+        
+        $finalItems[] = [
+            'name' => $dbItem['name'],
+            'image' => $dbItem['image'] ?? 'https://picsum.photos/100',
+            'price' => $dbItem['price'],
+            'qty' => $newQty
+        ];
+    }
 }
 
-$shippingCost = $subTotal >= 200 ? 0 : 25;
+$shippingCost = ($hasPhysicalItems && $subTotal > 0 && $subTotal < 200) ? 25 : 0;
 $couponDiscount = 0;
 $couponCode = isset($_SESSION['coupon_code']) ? $_SESSION['coupon_code'] : '';
 
@@ -73,7 +108,7 @@ $user = $stmtUser->fetch();
         <h1 class="text-3xl font-black text-pri-900 font-amiri">الدفع وإتمام الطلب</h1>
     </div>
 
-    <form action="ajax/checkout_action.php" method="post" class="erp-grid lg:grid-cols-3 afiu" style="animation-delay: 0.1s" onsubmit="document.getElementById('btnSubmitOrder').innerHTML = '<i class=\'fas fa-spinner fa-spin\'></i> جاري المعالجة...'; document.getElementById('btnSubmitOrder').disabled = true;">
+    <form action="ajax/checkout_action.php" method="post" enctype="multipart/form-data" class="erp-grid lg:grid-cols-3 afiu" style="animation-delay: 0.1s" onsubmit="document.getElementById('btnSubmitOrder').innerHTML = '<i class=\'fas fa-spinner fa-spin\'></i> جاري المعالجة...'; document.getElementById('btnSubmitOrder').disabled = true;">
         
         <div class="lg:col-span-2 space-y-8">
             <!-- 1. بيانات الشحن -->
@@ -104,29 +139,68 @@ $user = $stmtUser->fetch();
                 </div>
             </div>
 
-            <!-- 2. طريقة الدفع -->
+            <!-- 2. تعليمات التحويل البنكي ورفع الإيصال -->
             <div class="erp-card p-6 sm:p-8">
-                <h3 class="text-lg font-black text-pri-900 mb-6 border-b border-gray-100 pb-3"><i class="fas fa-wallet text-gld-500 ml-2"></i> طريقة الدفع</h3>
-                
-                <div class="space-y-4">
-                    <label class="flex items-center gap-4 p-4 rounded-xl border-2 border-pri-200 bg-pri-50 cursor-pointer transition">
-                        <input type="radio" name="payment_method" value="CreditCard" class="w-5 h-5 accent-pri-600" checked>
-                        <div class="flex-1">
-                            <h4 class="font-bold text-pri-900">البطاقة الائتمانية / مدى</h4>
-                            <p class="text-xs text-brk-400 mt-1">دفع إلكتروني آمن ومشفّر 100%</p>
-                        </div>
-                        <div class="flex gap-1 text-2xl text-pri-600"><i class="fab fa-cc-visa"></i> <i class="fab fa-cc-mastercard"></i></div>
-                    </label>
+                <h3 class="text-lg font-black text-pri-900 mb-4 border-b border-gray-100 pb-3"><i class="fas fa-university text-gld-500 ml-2"></i> تعليمات التحويل البنكي</h3>
+                <p class="text-brk-500 mb-6 leading-relaxed">
+                    يرجى تحويل قيمة الطلب إلى الحساب البنكي الخاص بالدولة التي تقيم فيها، وذلك لتسهيل عملية التحويل.
+                </p>
 
-                    <label class="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-gray-300 cursor-pointer transition bg-white">
-                        <input type="radio" name="payment_method" value="CashOnDelivery" class="w-5 h-5 accent-pri-600">
-                        <div class="flex-1">
-                            <h4 class="font-bold text-pri-900">الدفع عند الاستلام</h4>
-                            <p class="text-xs text-brk-400 mt-1">يتم الدفع لمندوب التوصيل يداً بيد</p>
-                        </div>
-                        <i class="fas fa-money-bill-wave text-2xl text-brk-300"></i>
-                    </label>
+                <!-- الحسابات البنكية -->
+                <div class="space-y-6">
+                    
+                    <!-- الإمارات -->
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 relative overflow-hidden group hover:border-pri-300 transition-colors">
+                        <div class="absolute top-0 right-0 bg-pri-50 text-pri-700 px-4 py-1 rounded-bl-xl font-bold text-sm">🇦🇪 الإمارات العربية المتحدة</div>
+                        <ul class="space-y-2 text-sm text-brk-600 mt-4">
+                            <li><span class="font-bold text-pri-900">اسم البنك:</span> بنك الإمارات الإسلامي</li>
+                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span> أحمــد مبارك حمد</li>
+                            <li><span class="font-bold text-pri-900">رقم الحساب:</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('3578521802301'); showToast('تم نسخ رقم الحساب', 'ok')">3578521802301</span></li>
+                            <li><span class="font-bold text-pri-900">الآيبان (IBAN):</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('AE520340003578521802301'); showToast('تم نسخ الآيبان', 'ok')">AE520340003578521802301</span></li>
+                            <li><span class="font-bold text-pri-900">العملة:</span> الدرهم الإماراتي</li>
+                            <li><span class="font-bold text-pri-900">رقم التوجية:</span> <span dir="ltr" class="font-mono">703420114</span></li>
+                        </ul>
+                    </div>
+
+                    <!-- السعودية -->
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 relative overflow-hidden group hover:border-pri-300 transition-colors">
+                        <div class="absolute top-0 right-0 bg-pri-50 text-pri-700 px-4 py-1 rounded-bl-xl font-bold text-sm">🇸🇦 المملكة العربية السعودية</div>
+                        <ul class="space-y-2 text-sm text-brk-600 mt-4">
+                            <li><span class="font-bold text-pri-900">اسم البنك:</span> بنك الرياض</li>
+                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span> أحمــد مبارك حمد</li>
+                            <li><span class="font-bold text-pri-900">رقم الحساب:</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('1575973509940'); showToast('تم نسخ رقم الحساب', 'ok')">1575973509940</span></li>
+                            <li><span class="font-bold text-pri-900">الآيبان (IBAN):</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('SA352000000157597350994'); showToast('تم نسخ الآيبان', 'ok')">SA352000000157597350994</span></li>
+                            <li><span class="font-bold text-pri-900">العملة:</span> الريال السعودي</li>
+                        </ul>
+                    </div>
+
+                    <!-- سلطنة عمان -->
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 relative overflow-hidden group hover:border-pri-300 transition-colors">
+                        <div class="absolute top-0 right-0 bg-pri-50 text-pri-700 px-4 py-1 rounded-bl-xl font-bold text-sm">🇴🇲 سلطنة عمان</div>
+                        <ul class="space-y-2 text-sm text-brk-600 mt-4">
+                            <li><span class="font-bold text-pri-900">اسم البنك:</span> بنك صحار الدولي</li>
+                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span> أحمــد مبارك حمد</li>
+                            <li><span class="font-bold text-pri-900">رقم الحساب:</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('023010072025'); showToast('تم نسخ رقم الحساب', 'ok')">023010072025</span></li>
+                            <li><span class="font-bold text-pri-900">الآيبان (IBAN):</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('OM340300000023010072025'); showToast('تم نسخ الآيبان', 'ok')">OM340300000023010072025</span></li>
+                            <li><span class="font-bold text-pri-900">العملة:</span> الريال العماني</li>
+                            <li><span class="font-bold text-pri-900">سوفت (SWIFT code):</span> <span dir="ltr" class="font-mono">BSHROMRUXXX</span></li>
+                        </ul>
+                    </div>
+
                 </div>
+
+                <!-- حقل رفع إيصال الدفع الإجباري -->
+                <div class="mt-8 bg-pri-50 p-6 rounded-2xl border border-pri-200">
+                    <h3 class="text-lg font-bold text-pri-900 mb-3 flex items-center gap-2"><i class="fas fa-file-invoice-dollar text-pri-600"></i> تأكيد الدفع</h3>
+                    <p class="text-sm text-brk-600 mb-4">يرجى إرفاق صورة إيصال التحويل البنكي (صورة الحوالة) لتأكيد الطلب وبدء تنفيذه.</p>
+                    <div class="form-group !mb-0">
+                        <div class="flex items-center gap-4 bg-white p-2 rounded-xl border border-pri-100">
+                            <input type="file" name="transfer_receipt" accept="image/*,application/pdf" class="form-control !border-0 !shadow-none !bg-transparent" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <input type="hidden" name="payment_method" value="BankTransfer">
             </div>
         </div>
 
@@ -136,14 +210,15 @@ $user = $stmtUser->fetch();
                 <h3 class="text-lg font-black text-pri-900 mb-5 border-b border-gray-200 pb-3">الفاتورة النهائية</h3>
                 
                 <div class="space-y-4 mb-6 max-h-48 overflow-y-auto pr-2 no-sb">
-                    <?php foreach ($productsInCart as $item): ?>
+                    <?php foreach ($finalItems as $item): ?>
                         <div class="flex items-center gap-3">
-                            <img src="<?= htmlspecialchars($item['image_url']) ?>" class="w-10 h-10 rounded object-cover border border-gray-100">
+                            <img src="<?= htmlspecialchars($item['image']) ?>" class="w-10 h-10 rounded object-cover border border-gray-100">
                             <div class="flex-1 min-w-0">
                                 <div class="text-xs font-bold text-pri-900 truncate"><?= htmlspecialchars($item['name']) ?></div>
-                                <div class="text-[10px] text-brk-400">× <?= $cartItems[$item['id']] ?></div>
+                                <div class="text-[10px] text-brk-400">× <?= $item['qty'] ?></div>
                             </div>
-                            <div class="font-bold text-pri-700 text-xs shrink-0"><?= number_format($item['price'] * $cartItems[$item['id']], 2) ?></div>
+                            <!-- تصحيح العملة -->
+                            <div class="font-bold text-pri-700 text-xs shrink-0"><?= number_format($item['price'] * $item['qty'], 2) ?> ر.س</div>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -164,12 +239,13 @@ $user = $stmtUser->fetch();
                 <div class="border-t border-gray-200 pt-4 mb-6">
                     <div class="flex justify-between items-center">
                         <span class="text-base font-black text-pri-900">الإجمالي المستحق</span>
+                        <!-- تصحيح العملة بجمعها في span واحد -->
                         <span class="text-2xl font-black text-pri-700"><?= number_format($total, 2) ?> ر.س</span>
                     </div>
                 </div>
 
                 <button type="submit" id="btnSubmitOrder" class="btn btn-primary btn-block btn-lg shadow-xl !py-4 text-base">
-                    <i class="fas fa-lock"></i> تأكيد الطلب
+                    <i class="fas fa-lock"></i> إرسال الطلب وإرفاق الإيصال
                 </button>
             </div>
         </div>

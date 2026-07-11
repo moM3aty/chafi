@@ -5,14 +5,29 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_role'], ['Admin', 
     echo "<script>window.location.href='index.php';</script>"; exit;
 }
 
-// معالجة القراءة (Mark as read) والحذف
+// 1. باتش برمجي سريع للتأكد من وجود عمود admin_reply في الداتابيز (لكي لا ينهار النظام)
+try {
+    $pdo->query("SELECT admin_reply FROM contact_messages LIMIT 1");
+} catch (Exception $e) {
+    $pdo->exec("ALTER TABLE contact_messages ADD COLUMN admin_reply TEXT DEFAULT NULL AFTER message");
+}
+
+// معالجة القراءة (Mark as read)، الرد، والحذف
 if (isset($_POST['action'])) {
     if ($_POST['action'] == 'delete') {
         $pdo->prepare("DELETE FROM contact_messages WHERE id = ?")->execute([(int)$_POST['msg_id']]);
-        echo "<script>window.location.href='index.php?page=admin_messages';</script>"; exit;
+        echo "<script>window.location.href='index.php?page=admin_messages&deleted=1';</script>"; exit;
     } elseif ($_POST['action'] == 'mark_read') {
         $pdo->prepare("UPDATE contact_messages SET status = 'Read' WHERE id = ?")->execute([(int)$_POST['msg_id']]);
         echo "<script>window.location.href='index.php?page=admin_messages';</script>"; exit;
+    } elseif ($_POST['action'] == 'reply') {
+        $msgId = (int)$_POST['msg_id'];
+        $replyText = trim($_POST['admin_reply']);
+        if (!empty($replyText)) {
+            // تحديث الرسالة بالرد وتغيير حالتها
+            $pdo->prepare("UPDATE contact_messages SET admin_reply = ?, status = 'Read' WHERE id = ?")->execute([$replyText, $msgId]);
+            echo "<script>window.location.href='index.php?page=admin_messages&replied=1';</script>"; exit;
+        }
     }
 }
 
@@ -20,9 +35,20 @@ $messages = $pdo->query("SELECT * FROM contact_messages ORDER BY created_at DESC
 ?>
 
 <div class="max-w-7xl mx-auto px-4 py-8 mb-14 afiu">
-    <div class="flex items-center justify-between mb-8">
-        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-envelope-open-text text-gld-500 ml-2"></i>رسائل الزوار</h1>
+    <div class="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+        <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-envelope-open-text text-gld-500 ml-2"></i>رسائل الزوار والاستشارات</h1>
         <a href="index.php?page=admin_dashboard" class="cf-btn cf-btn-out cf-btn-sm bg-white"><i class="fas fa-arrow-right"></i> لوحة القيادة</a>
+    </div>
+
+    <?php if(isset($_GET['replied'])): ?>
+        <div class="bg-green-50 border-r-4 border-green-500 p-4 rounded-xl text-green-700 font-bold mb-6 shadow-sm"><i class="fas fa-check-circle ml-2"></i> تم إرسال الرد بنجاح. سيظهر للعميل في لوحة التحكم الخاصة به.</div>
+    <?php endif; ?>
+    <?php if(isset($_GET['deleted'])): ?>
+        <div class="bg-red-50 border-r-4 border-red-500 p-4 rounded-xl text-red-700 font-bold mb-6 shadow-sm"><i class="fas fa-trash ml-2"></i> تم حذف الرسالة بنجاح.</div>
+    <?php endif; ?>
+
+    <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 mb-6 text-sm text-blue-800 leading-loose shadow-inner">
+        <i class="fas fa-info-circle text-blue-600 ml-1"></i> اضغط على زر <b>"عرض ورد"</b> لقراءة نص الاستشارة وكتابة ردك المباشر. الرد سيظهر للعميل في حسابه لتتم الدردشة بسرية.
     </div>
 
     <div class="erp-card overflow-hidden">
@@ -35,7 +61,7 @@ $messages = $pdo->query("SELECT * FROM contact_messages ORDER BY created_at DESC
                         <th>الموضوع</th>
                         <th>التاريخ</th>
                         <th>الحالة</th>
-                        <th class="text-center">إجراءات</th>
+                        <th class="text-center">إجراءات (عرض / رد)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -43,30 +69,41 @@ $messages = $pdo->query("SELECT * FROM contact_messages ORDER BY created_at DESC
                         <tr><td colspan="6" class="text-center py-10 text-brk-400">لا توجد رسائل مسجلة</td></tr>
                     <?php else: ?>
                         <?php foreach($messages as $m): ?>
-                            <tr class="<?= $m['status'] == 'New' ? 'bg-pri-50/50 font-bold' : '' ?>">
-                                <td class="text-pri-900"><?= htmlspecialchars($m['full_name'] ?? $m['name']) ?></td>
-                                <td>
-                                    <div dir="ltr" class="text-xs text-brk-500"><?= htmlspecialchars($m['email']) ?></div>
-                                    <div dir="ltr" class="text-xs font-bold text-gray-500"><?= htmlspecialchars($m['phone']) ?></div>
+                            <tr class="<?= $m['status'] == 'New' ? 'bg-pri-50/50 font-bold' : '' ?> hover:bg-gray-50 transition-colors">
+                                <td class="text-pri-900">
+                                    <div class="font-bold"><?= htmlspecialchars($m['full_name'] ?? $m['name']) ?></div>
+                                    <?php if($m['user_id']): ?><span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-md mt-1 inline-block"><i class="fas fa-user-check"></i> عضو مسجل</span><?php endif; ?>
                                 </td>
-                                <td class="text-pri-700 truncate max-w-[150px]" title="<?= htmlspecialchars($m['subject']) ?>"><?= htmlspecialchars($m['subject']) ?></td>
-                                <td class="text-xs text-brk-400" dir="ltr"><?= date('Y-m-d H:i', strtotime($m['created_at'])) ?></td>
                                 <td>
-                                    <?php if($m['status'] == 'New'): ?> <span class="badge badge-warning">جديدة</span> <?php else: ?> <span class="badge bg-gray-100 text-gray-500">مقروءة</span> <?php endif; ?>
+                                    <div dir="ltr" class="text-xs text-brk-500 mb-1"><i class="fas fa-envelope text-gray-400"></i> <?= htmlspecialchars($m['email']) ?></div>
+                                    <div dir="ltr" class="text-xs font-bold text-gray-600"><i class="fas fa-phone-alt text-gray-400"></i> <?= htmlspecialchars($m['phone']) ?></div>
+                                </td>
+                                <td class="text-pri-700 max-w-[200px]">
+                                    <div class="truncate" title="<?= htmlspecialchars($m['subject']) ?>"><?= htmlspecialchars($m['subject']) ?></div>
+                                </td>
+                                <td class="text-xs text-brk-400 font-mono" dir="ltr"><?= date('Y-m-d H:i', strtotime($m['created_at'])) ?></td>
+                                <td>
+                                    <?php if(!empty($m['admin_reply'])): ?> 
+                                        <span class="badge bg-green-50 text-green-700 border border-green-200 shadow-sm px-3"><i class="fas fa-reply text-[9px] ml-1"></i> تم الرد</span>
+                                    <?php elseif($m['status'] == 'New'): ?> 
+                                        <span class="badge bg-yellow-100 text-yellow-800 border border-yellow-300 shadow-sm px-3 animate-pulse">جديدة</span> 
+                                    <?php else: ?> 
+                                        <span class="badge bg-gray-100 text-gray-600 border border-gray-200 px-3">مقروءة</span> 
+                                    <?php endif; ?>
                                 </td>
                                 <td class="flex justify-center gap-2">
-                                    <?php if($m['status'] == 'New'): ?>
-                                        <form method="post">
-                                            <input type="hidden" name="action" value="mark_read">
-                                            <input type="hidden" name="msg_id" value="<?= $m['id'] ?>">
-                                            <button type="submit" class="btn btn-sm btn-outline !py-1 !px-2 text-xs" title="تحديد كمقروء"><i class="fas fa-check"></i></button>
-                                        </form>
-                                    <?php endif; ?>
-                                    <button onclick="alert('الرسالة:\n<?= addslashes(htmlspecialchars($m['message'])) ?>')" class="btn btn-sm btn-primary !py-1 !px-2 text-xs" title="قراءة النص"><i class="fas fa-eye"></i></button>
+                                    <button onclick='openReplyModal(<?= htmlspecialchars(json_encode([
+                                        "id" => $m["id"],
+                                        "name" => $m["full_name"],
+                                        "subject" => $m["subject"],
+                                        "message" => $m["message"],
+                                        "reply" => $m["admin_reply"] ?? ""
+                                    ])) ?>)' class="btn btn-sm btn-primary !py-1.5 !px-3 text-xs shadow-sm" title="قراءة ورد"><i class="fas fa-comments"></i> عرض ورد</button>
+                                    
                                     <form method="post" onsubmit="return confirm('تأكيد حذف الرسالة؟');">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="msg_id" value="<?= $m['id'] ?>">
-                                        <button type="submit" class="btn btn-sm btn-danger !py-1 !px-2 text-xs" title="حذف"><i class="fas fa-trash"></i></button>
+                                        <button type="submit" class="btn btn-sm bg-gray-100 text-gray-500 hover:bg-red-500 hover:text-white !py-1.5 !px-2.5 text-xs transition-colors shadow-sm" title="حذف"><i class="fas fa-trash"></i></button>
                                     </form>
                                 </td>
                             </tr>
@@ -77,3 +114,45 @@ $messages = $pdo->query("SELECT * FROM contact_messages ORDER BY created_at DESC
         </div>
     </div>
 </div>
+
+<!-- مودال قراءة الرسالة والرد -->
+<div id="replyModal" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width:650px">
+        <button onclick="closeMdl('replyModal')" class="modal-close"><i class="fas fa-times"></i></button>
+        <div class="modal-header pb-4 border-b border-gray-100 bg-gray-50/50 rounded-t-2xl">
+            <h2 class="text-xl font-black text-pri-900 font-amiri flex items-center gap-2 justify-center"><i class="fas fa-user-circle text-brk-300"></i> رسالة من: <span id="r_name" class="text-pri-600"></span></h2>
+        </div>
+        <div class="modal-body !pt-6">
+            
+            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 mb-6 shadow-inner relative overflow-hidden">
+                <div class="absolute right-0 top-0 bottom-0 w-1 bg-pri-300"></div>
+                <div class="text-xs text-brk-400 mb-2 font-bold flex items-center gap-1"><i class="fas fa-tag"></i> الموضوع: <span id="r_subject" class="text-pri-900 ml-1"></span></div>
+                <div class="text-sm text-brk-700 leading-loose whitespace-pre-wrap font-medium" id="r_message"></div>
+            </div>
+
+            <form method="post">
+                <input type="hidden" name="action" value="reply">
+                <input type="hidden" name="msg_id" id="r_msg_id" value="">
+                
+                <div class="form-group mb-6">
+                    <label class="form-label text-pri-800 font-bold mb-3"><i class="fas fa-reply text-gld-500 ml-1"></i> الـرد على الاستشارة / الرسالة:</label>
+                    <textarea name="admin_reply" id="r_admin_reply" class="form-textarea !min-h-[140px] bg-pri-50/30 border-pri-200 focus:border-pri-500 focus:ring focus:ring-pri-200 transition-shadow" placeholder="اكتب ردك هنا... سيظهر هذا الرد للعميل في لوحة التحكم الخاصة به بشكل مباشر." required></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-gold btn-block btn-lg shadow-lg hover:scale-[1.02] transition-transform"><i class="fas fa-paper-plane"></i> حفظ وإرسال الرد للعميل</button>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+function openReplyModal(data) {
+    document.getElementById('r_msg_id').value = data.id;
+    document.getElementById('r_name').innerText = data.name;
+    document.getElementById('r_subject').innerText = data.subject || 'بدون موضوع';
+    document.getElementById('r_message').innerText = data.message;
+    document.getElementById('r_admin_reply').value = data.reply;
+    openMdl('replyModal');
+}
+</script>

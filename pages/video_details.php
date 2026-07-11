@@ -1,6 +1,6 @@
 <?php
 // مسار الملف: pages/video_details.php
-// النسخة الاحترافية — مشغل فيديو + فيديوهات مشابهة + تفاصيل
+// النسخة الكاملة — مشغل فيديو محمي + إضافة للسلة + حجز موعد
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
@@ -32,7 +32,7 @@ $relatedVideos = $pdo->prepare("
 $relatedVideos->execute([$id, $video['category_id'], $video['category_id']]);
 $related = $relatedVideos->fetchAll();
 
-// جلب مسار الأقسام
+// مسار الأقسام
 function getCatChain($pdo, $catId) {
     $names = [];
     while ($catId) {
@@ -57,22 +57,46 @@ function formatDur($sec) {
 }
 
 function getYoutubeEmbed($url) {
-    // تحويل رابط يوتيوب لـ iframe
-    // صيغ كامل: https://www.youtube.com/watch?v=VIDEO_ID
-    preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/)([a-zA-Z0-9_-]{11}))/', $url, $m);
-    if (!empty($m[1])) {
-        return '<iframe src="https://www.youtube.com/embed/' . $m[1] . '?enablejsapi=1&rel=0&modestbranding=1" style="width:100%;aspect-ratio:16/9;border:none;border-radius:16px;" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" loading="lazy"></iframe>';
+    if (strpos($url, 'youtube.com') !== false || strpos($url, 'youtu.be') !== false) {
+        preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $url, $m);
+        if (!empty($m[1])) {
+            return '<iframe src="https://www.youtube.com/embed/' . $m[1] . '?enablejsapi=1&rel=0&modestbranding=1" style="width:100%;aspect-ratio:16/9;border:none;border-radius:16px;" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" loading="lazy"></iframe>';
+        }
     }
-    // رابط مباشر ملف
     if (preg_match('/\.(mp4|webm|ogg)$/i', $url)) {
         return '<video src="' . htmlspecialchars($url) . '" controls style="width:100%;border-radius:16px;max-height:500px;" controlslist="nodownload"></video>';
     }
-    // رابط تضمين
     return '<div class="flex items-center justify-center h-64 bg-gray-900 rounded-2xl"><i class="fas fa-video-slash text-4xl text-gray-600"></i></div>';
 }
 
 $catColor = $video['cat_color'] ?? '#5a463c';
-$isFree = $video['price'] <= 0 || $video['is_free'] == 1;
+// التصحيح: الاعتماد فقط على السعر، إذا كان صفر فهو مجاني، وإذا كان أكبر فهو مدفوع.
+$isFree = (float)$video['price'] <= 0;
+
+// ════════ نظام حماية المحتوى الرقمي ════════
+$hasPurchased = false;
+$isAdmin = isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['Admin', 'SuperAdmin']);
+
+if (isset($_SESSION['user_id'])) {
+    try {
+        $stmtCheck = $pdo->prepare("
+            SELECT oi.id 
+            FROM order_items oi 
+            JOIN orders o ON oi.order_id = o.id 
+            WHERE o.user_id = ? 
+              AND oi.item_type = 'video' 
+              AND oi.item_id = ? 
+              AND o.status NOT IN ('Pending', 'Cancelled', 'Refunded', 'Failed')
+        ");
+        $stmtCheck->execute([$_SESSION['user_id'], $id]);
+        if ($stmtCheck->fetch()) {
+            $hasPurchased = true;
+        }
+    } catch(Exception $e) {}
+}
+
+$canView = $isFree || $hasPurchased || $isAdmin;
+// ══════════════════════════════════════════
 ?>
 
 <div class="max-w-6xl mx-auto px-4 py-8 mb-14">
@@ -96,21 +120,34 @@ $isFree = $video['price'] <= 0 || $video['is_free'] == 1;
         
         <!-- مشغل الفيديو -->
         <div class="relative bg-gray-900 aspect-video max-h-[520px]">
-            <?php if (!empty($video['video_url'])): ?>
-                <div class="w-full h-full" id="videoContainer">
-                    <?= getYoutubeEmbed($video['video_url']) ?>
+            <?php if ($canView): ?>
+                <?php if (!empty($video['video_url'])): ?>
+                    <div class="w-full h-full" id="videoContainer">
+                        <?= getYoutubeEmbed($video['video_url']) ?>
+                    </div>
+                <?php else: ?>
+                    <div class="flex items-center justify-center h-full bg-gray-900">
+                        <i class="fas fa-video-slash text-5xl text-gray-700 opacity-40"></i>
+                    </div>
+                <?php endif; ?>
+                <!-- غطاء فيديو أثناء التشغيل -->
+                <div id="videoOverlay" class="absolute inset-0 bg-black/0 hover:bg-black/40 transition-all duration-300 flex items-center justify-center cursor-pointer z-10" onclick="toggleVideoPlay()">
+                    <div id="playBtnBig" class="w-20 h-20 rounded-full bg-white/95 flex items-center justify-center text-2xl shadow-2xl transition-all duration-300 hover:scale-110" style="color:<?= $catColor ?>">
+                        <i class="fas fa-play ml-1"></i>
+                    </div>
                 </div>
             <?php else: ?>
-                <div class="flex items-center justify-center h-full bg-gray-900">
-                    <i class="fas fa-video-slash text-5xl text-gray-700 opacity-40"></i>
+                <!-- فيديو مقفل -->
+                <img src="<?= htmlspecialchars($video['thumbnail_url'] ?? 'https://picsum.photos/1280/720') ?>" class="absolute inset-0 w-full h-full object-cover opacity-30 blur-sm">
+                <div class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/80 backdrop-blur-sm z-10 text-center px-4">
+                    <div class="w-20 h-20 rounded-full bg-gld-500/20 text-gld-500 flex items-center justify-center text-4xl mb-4 border-2 border-gld-500/50 shadow-[0_0_30px_rgba(200,160,32,0.4)]">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3 class="text-white font-black font-amiri text-2xl sm:text-3xl mb-2 drop-shadow-md">هذا الفيديو حصري ومدفوع</h3>
+                    <p class="text-gray-300 text-sm max-w-md">قم بشراء الفيديو لتتمكن من مشاهدته كاملاً، سيتم فتح المشغل فور إتمام الطلب.</p>
                 </div>
             <?php endif; ?>
-            <!-- غطاء فيديو أثناء التشغيل -->
-            <div id="videoOverlay" class="absolute inset-0 bg-black/0 hover:bg-black/40 transition-all duration-300 flex items-center justify-center cursor-pointer z-10" onclick="toggleVideoPlay()">
-                <div id="playBtnBig" class="w-20 h-20 rounded-full bg-white/95 flex items-center justify-center text-2xl shadow-2xl transition-all duration-300 hover:scale-110" style="color:<?= $catColor ?>">
-                    <i class="fas fa-play ml-1"></i>
-                </div>
-            </div>
+            
             <!-- غلاف معلومات فوق الفيديو -->
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-5 pt-16 z-20 pointer-events-none">
                 <div class="max-w-2xl">
@@ -128,22 +165,9 @@ $isFree = $video['price'] <= 0 || $video['is_free'] == 1;
             </div>
         </div>
 
-        <!-- معلومات تفصيلي الفيديو -->
+        <!-- معلومات تفصيلية للفيديو -->
         <div class="p-6 sm:p-8 flex flex-col lg:flex-row gap-8">
             <div class="w-full lg:w-3/5">
-                <!-- مسار الأقسام -->
-                <div class="flex flex-wrap items-center gap-2 mb-5">
-                    <?php foreach ($catChain as $i => $cn): ?>
-                        <?php if ($i < count($catChain) - 1): ?>
-                            <a href="index.php?page=category&category_id=<?= $video['category_id'] ?>" class="text-xs font-bold text-pri-500 hover:text-pri-700 transition no-underline flex items-center gap-1"><?= htmlspecialchars($cn) ?></a>
-                            <i class="fas fa-chevron-left text-[8px] text-brk-300"></i>
-                        <?php else: ?>
-                            <span class="text-xs font-bold text-pri-700"><?= htmlspecialchars($cn) ?></span>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
-                </div>
-
-                <!-- بيانات تفصيلية -->
                 <div class="grid grid-cols-2 gap-4 mb-6 p-5 bg-gray-50 rounded-2xl border border-gray-100">
                     <div>
                         <div class="text-[10px] text-brk-400 uppercase tracking-wider mb-1">المقدم / الشيخ</div>
@@ -163,29 +187,44 @@ $isFree = $video['price'] <= 0 || $video['is_free'] == 1;
                     </div>
                 </div>
 
-                <!-- الوصف -->
                 <div class="mb-6">
                     <h3 class="text-sm font-bold text-pri-800 mb-3 flex items-center gap-2"><i class="fas fa-info-circle text-gld-500 text-xs"></i> وصف الفيديو</h3>
                     <div class="prose prose-sm text-brk-600 leading-loose bg-white border border-gray-100 rounded-2xl p-5">
                         <?php if (!empty($video['description'])): ?>
-                            <?= nl2br(htmlspecialchars($video['description'])) ?>
+                            <?= nl2br($video['description']) ?>
                         <?php else: ?>
-                            <p>فيديو تعليمي وتوضيحي يخص الرقية الشرعية. يتميز بمحتوى موثوق ومعتمد من علماء الأمة. يشمل شرحاً مفصلاً لأحكام الرقية الشرعية وطرق التحصين.</p>
+                            <p>فيديو تعليمي وتوضيحي يخص الرقية الشرعية. يتميز بمحتوى موثوق ومعتمد من علماء الأمة.</p>
                         <?php endif; ?>
                     </div>
                 </div>
 
-                <!-- زر الشراء / التنزيل -->
-                <div class="flex flex-wrap gap-3">
-                    <button onclick="addToCart(0, 1, 0, 0, <?= $video['id'] ?>)" class="cf-btn cf-btn-gld flex-1 h-14 text-base">
-                        <i class="fas fa-cart-arrow-down"></i> <?= $isFree ? 'إضافة مجاناً' : 'شراء الفيديو الآن' ?>
-                    </button>
-                    <?php if (!empty($video['video_url']) && !$isFree): ?>
-                        <a href="<?= htmlspecialchars($video['video_url']) ?>" target="_blank" class="cf-btn cf-btn-out h-14 px-6" onclick="event.preventDefault(); showToast('يتم فتح رابط الفيديو في نافذة جديدة', 'ok')">
-                            <i class="fas fa-external-link-alt"></i> فتح الرابط
-                        </a>
+                <!-- زر الإضافة للسلة -->
+                <div class="flex flex-wrap gap-3 mt-6">
+                    <?php if (!$hasPurchased && !$isFree && !$isAdmin): ?>
+                        <button onclick="addToCart('video', <?= $video['id'] ?>)" class="cf-btn cf-btn-gld flex-1 h-14 text-base">
+                            <i class="fas fa-cart-arrow-down"></i> شراء الفيديو (<?= number_format($video['price'], 2) ?> ر.س)
+                        </button>
+                    <?php else: ?>
+                        <div class="flex-1 bg-green-50 border border-green-200 text-green-700 rounded-xl flex items-center justify-center font-bold text-sm h-14">
+                            <i class="fas fa-check-circle ml-2"></i> <?= $isFree ? 'هذا الفيديو مجاني' : 'تم شراء هذا الفيديو مسبقاً' ?>
+                        </div>
                     <?php endif; ?>
                 </div>
+
+                <!-- بانر حجز الجلسة (أونلاين) -->
+                <div class="mt-8 bg-gradient-to-r from-pri-50 to-white border-2 border-pri-100 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm">
+                    <div class="flex items-center gap-5">
+                        <div class="w-14 h-14 rounded-full bg-gld-100 text-gld-600 flex items-center justify-center text-2xl shrink-0"><i class="fas fa-calendar-check"></i></div>
+                        <div>
+                            <h3 class="text-lg font-black text-pri-900 font-amiri mb-1">احجز موعد لجلسة أونلاين</h3>
+                            <p class="text-xs text-brk-500">جلسة تشخيص ورقية مباشرة عبر الإنترنت.</p>
+                        </div>
+                    </div>
+                    <a href="index.php?page=book_appointment" class="btn btn-gold shrink-0 shadow-md hover:scale-105 transition-transform">
+                        احجز موعدك <i class="fas fa-arrow-left mr-2"></i>
+                    </a>
+                </div>
+
             </div>
 
             <!-- الفيديوهات المشابهة -->
@@ -200,7 +239,9 @@ $isFree = $video['price'] <= 0 || $video['is_free'] == 1;
                         <div class="vid-thumb h-36">
                             <img src="<?= htmlspecialchars($rv['thumbnail_url'] ?? 'https://picsum.photos/400/225') ?>" alt="" class="w-full h-full object-cover" loading="lazy">
                             <div class="vid-ov">
-                                <div class="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center text-pri-600 text-xs shadow group-hover:scale-110 transition-transform"><i class="fas fa-play ml-0.5"></i></div>
+                                <div class="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center text-pri-600 text-xs shadow group-hover:scale-110 transition-transform">
+                                    <i class="fas <?= ((float)$rv['price'] > 0) ? 'fa-lock' : 'fa-play' ?> ml-0.5"></i>
+                                </div>
                             </div>
                             <?php if ($rv['video_duration']): ?>
                                 <span class="absolute bottom-1.5 left-1.5 bg-black/70 text-white text-[8px] px-1.5 py-0.5 rounded"><?= formatDur($rv['video_duration']) ?></span>
@@ -209,7 +250,7 @@ $isFree = $video['price'] <= 0 || $video['is_free'] == 1;
                         <div class="p-3">
                             <h4 class="font-bold text-pri-900 text-xs mb-1 line-clamp-2"><?= htmlspecialchars($rv['title']) ?></h4>
                             <div class="flex items-center justify-between mt-2">
-                                <span class="font-black text-pri-600 text-xs"><?= $rv['price'] > 0 ? number_format($rv['price'], 0) . ' ر.س' : '<span class="text-green-600 text-xs font-bold">مجاني</span>' ?></span>
+                                <span class="font-black text-pri-600 text-xs"><?= (float)$rv['price'] > 0 ? number_format($rv['price'], 0) . ' ر.س' : '<span class="text-green-600 text-xs font-bold">مجاني</span>' ?></span>
                                 <span class="text-[9px] text-brk-400"><i class="fas fa-eye ml-0.5"></i><?= $rv['view_count'] ?></span>
                             </div>
                         </div>
@@ -223,15 +264,11 @@ $isFree = $video['price'] <= 0 || $video['is_free'] == 1;
 </div>
 
 <script>
-// ═════════════════════════════════════════════════════
-// تشغيل/إيقاف الفيديو
-// ═════════════════════════════════════════════════════
 const videoContainer = document.getElementById('videoContainer');
 const videoOverlay = document.getElementById('videoOverlay');
 const playBtnBig = document.getElementById('playBtnBig');
 let isPlaying = false;
 
-// استخراج عنصر iframe اليوتيوب
 function getYouTubeIframe() {
     if (!videoContainer) return null;
     const iframe = videoContainer.querySelector('iframe');
@@ -243,14 +280,12 @@ function toggleVideoPlay() {
     if (!iframe) return;
 
     if (!isPlaying) {
-        // تشغيل
         iframe.contentWindow.postMessage('{"event":"command","func":"playVideo"}', '*');
         playBtnBig.innerHTML = '<i class="fas fa-pause"></i>';
         playBtnBig.style.color = '#fff';
         isPlaying = true;
         videoOverlay.style.backgroundColor = 'rgba(0,0,0,0)';
     } else {
-        // إيقاف
         iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo"}', '*');
         playBtnBig.innerHTML = '<i class="fas fa-play" style="margin-left:2px"></i>';
         isPlaying = false;
@@ -258,15 +293,9 @@ function toggleVideoPlay() {
     }
 }
 
-// إخفاء الغطاء عند النقر خارج الفيديو
 if (videoOverlay) {
     videoOverlay.addEventListener('click', function(e) {
         if (e.target === this) toggleVideoPlay();
     });
 }
-
-// إخفاء الغطاء عند الضغط على مفتاح
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && isPlaying) toggleVideoPlay();
-});
 </script>

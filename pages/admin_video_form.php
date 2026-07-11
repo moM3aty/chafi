@@ -56,6 +56,32 @@ if ($isEdit) {
 }
 ?>
 
+<!-- تضمين مكتبة CKEditor 5 باللغة العربية عبر الـ CDN -->
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.2/super-build/ckeditor.js"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.2/super-build/translations/ar.js"></script>
+<style>
+    /* تنسيق المحرر ليناسب هوية متجر تشافي */
+    .ck-editor__editable_inline {
+        min-height: 250px;
+        font-family: 'Cairo', sans-serif !important;
+        font-size: 15px;
+        direction: rtl;
+        text-align: right;
+        border-radius: 0 0 12px 12px !important;
+        border-color: #e8dfd2 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+    }
+    .ck-editor__editable_inline:focus {
+        border-color: #1a582a !important;
+        box-shadow: 0 0 0 4px rgba(26,88,42,.08) !important;
+    }
+    .ck-toolbar {
+        border-radius: 12px 12px 0 0 !important;
+        border-color: #e8dfd2 !important;
+        background: #fdf9ed !important;
+    }
+</style>
+
 <div class="max-w-4xl mx-auto px-4 py-8 mb-14 afiu">
     <div class="flex items-center justify-between mb-8">
         <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas <?= $isEdit ? 'fa-edit' : 'fa-video' ?> text-gld-500 ml-2"></i><?= $isEdit ? 'تعديل فيديو' : 'إضافة فيديو' ?></h1>
@@ -96,8 +122,8 @@ if ($isEdit) {
             </div>
 
             <div class="cf-group mb-6">
-                <label class="cf-label">وصف الفيديو</label>
-                <textarea name="description" class="form-textarea" rows="3"><?= htmlspecialchars($item['description'] ?? '') ?></textarea>
+                <label class="cf-label">وصف الفيديو (يدعم الألوان والتنسيقات)</label>
+                <textarea name="description" id="editor" class="form-textarea" rows="3"><?= htmlspecialchars($item['description'] ?? '') ?></textarea>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -122,8 +148,56 @@ if ($isEdit) {
             </div>
 
             <div class="-mt-4">
-                <button type="submit" class="btn btn-primary btn-lg shadow-xl w-full sm:w-auto"><i class="fas fa-save"></i> حفظ البيانات</button>
+                <button type="submit" class="btn btn-gold btn-lg shadow-xl w-full sm:w-auto"><i class="fas fa-save"></i> حفظ البيانات</button>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.querySelector('#editor')) {
+        CKEDITOR.ClassicEditor.create(document.querySelector('#editor'), {
+            language: 'ar',
+            toolbar: {
+                items: [
+                    'heading', '|',
+                    'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
+                    'bold', 'italic', 'underline', 'strikethrough', '|',
+                    'alignment', '|',
+                    'numberedList', 'bulletedList', '|',
+                    'outdent', 'indent', '|',
+                    'link', 'insertTable', 'blockQuote', 'horizontalLine', '|',
+                    'removeFormat', 'sourceEditing', 'undo', 'redo'
+                ],
+                shouldNotGroupWhenFull: true
+            },
+            list: { properties: { styles: true, startIndex: true, reversed: true } },
+            heading: {
+                options: [
+                    { model: 'paragraph', title: 'فقرة', class: 'ck-heading_paragraph' },
+                    { model: 'heading1', view: 'h1', title: 'عنوان 1', class: 'ck-heading_heading1' },
+                    { model: 'heading2', view: 'h2', title: 'عنوان 2', class: 'ck-heading_heading2' },
+                    { model: 'heading3', view: 'h3', title: 'عنوان 3', class: 'ck-heading_heading3' },
+                    { model: 'heading4', view: 'h4', title: 'عنوان 4', class: 'ck-heading_heading4' }
+                ]
+            },
+            fontFamily: {
+                options: [ 'default', 'Cairo, sans-serif', 'Amiri, serif', 'Arial, sans-serif' ],
+                supportAllValues: true
+            },
+            fontSize: {
+                options: [ 10, 12, 14, 'default', 18, 20, 24, 28, 32, 36 ],
+                supportAllValues: true
+            },
+            removePlugins: [
+                'CKBox', 'CKFinder', 'EasyImage', 'RealTimeCollaborativeComments', 'RealTimeCollaborativeTrackChanges', 'RealTimeCollaborativeRevisionHistory',
+                'PresenceList', 'Comments', 'TrackChanges', 'TrackChangesData', 'RevisionHistory', 'Pagination', 'WProofreader', 'MathType',
+                'SlashCommand', 'Template', 'DocumentOutline', 'FormatPainter', 'TableOfContents', 'PasteFromOfficeEnhanced', 'Autosave'
+            ]
+        }).catch(error => {
+            console.error(error);
+        });
+    }
+});
+</script>

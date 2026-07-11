@@ -15,12 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $original_price = (float)$_POST['original_total_price'];
     $package_price = (float)$_POST['package_price'];
     $short_desc = $_POST['short_description'];
-    $desc = $_POST['description'];
+    $desc = $_POST['description']; // المحتوى يأتي من المحرر كـ HTML
     
     $is_active = isset($_POST['is_active']) ? 1 : 0;
     $is_featured = isset($_POST['is_featured']) ? 1 : 0;
 
-    $img_url = $_POST['current_image'] ?? ''; // تم الإصلاح: تجنب خطأ عدم تعريف المتغير
+    $img_url = $_POST['current_image'] ?? ''; 
     if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] == 0) {
         $uploadDir = 'assets/uploads/packages/';
         if (!is_dir($uploadDir)) { mkdir($uploadDir, 0777, true); }
@@ -55,6 +55,31 @@ if ($isEdit) {
 }
 ?>
 
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.2/super-build/ckeditor.js"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.2/super-build/translations/ar.js"></script>
+<style>
+    /* تنسيق المحرر ليناسب هوية متجر تشافي */
+    .ck-editor__editable_inline {
+        min-height: 250px;
+        font-family: 'Cairo', sans-serif !important;
+        font-size: 15px;
+        direction: rtl;
+        text-align: right;
+        border-radius: 0 0 12px 12px !important;
+        border-color: #e8dfd2 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+    }
+    .ck-editor__editable_inline:focus {
+        border-color: #1a582a !important;
+        box-shadow: 0 0 0 4px rgba(26,88,42,.08) !important;
+    }
+    .ck-toolbar {
+        border-radius: 12px 12px 0 0 !important;
+        border-color: #e8dfd2 !important;
+        background: #fdf9ed !important;
+    }
+</style>
+
 <div class="max-w-4xl mx-auto px-4 py-8 mb-14 afiu">
     <div class="flex items-center justify-between mb-8">
         <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas <?= $isEdit ? 'fa-edit' : 'fa-boxes' ?> text-gld-500 ml-2"></i><?= $isEdit ? 'تعديل باقة' : 'إضافة باقة جديدة' ?></h1>
@@ -70,11 +95,14 @@ if ($isEdit) {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div class="cf-group !mb-0">
                     <label class="cf-label">اسم الباقة <span class="req">*</span></label>
-                    <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($item['name'] ?? '') ?>" required>
+                    <!-- إضافة ID للحقل لاستخدامه في الجافاسكريبت -->
+                    <input type="text" name="name" id="pkgName" class="form-control" value="<?= htmlspecialchars($item['name'] ?? '') ?>" required>
                 </div>
                 <div class="cf-group !mb-0">
                     <label class="cf-label">الرابط النظيف (Slug) <span class="req">*</span></label>
-                    <input type="text" name="slug" class="form-control" dir="ltr" value="<?= htmlspecialchars($item['slug'] ?? '') ?>">
+                    <!-- إضافة ID للحقل لاستخدامه في الجافاسكريبت -->
+                    <input type="text" name="slug" id="pkgSlug" class="form-control" dir="ltr" value="<?= htmlspecialchars($item['slug'] ?? '') ?>" placeholder="مثال: family-package">
+                    <p class="text-[10px] text-brk-400 mt-1">يتم توليده تلقائياً ويمكنك تعديله يدوياً</p>
                 </div>
             </div>
 
@@ -90,13 +118,13 @@ if ($isEdit) {
             </div>
 
             <div class="cf-group mb-6">
-                <label class="cf-label">وصف مختصر</label>
+                <label class="cf-label">وصف مختصر (يظهر في كروت الباقات)</label>
                 <input type="text" name="short_description" class="form-control" value="<?= htmlspecialchars($item['short_description'] ?? '') ?>">
             </div>
 
             <div class="cf-group mb-6">
-                <label class="cf-label">وصف شامل للبيانات المحتواة في الباقة</label>
-                <textarea name="description" class="form-textarea" rows="4"><?= htmlspecialchars($item['description'] ?? '') ?></textarea>
+                <label class="cf-label">وصف شامل للبيانات المحتواة في الباقة (يدعم التنسيقات والألوان)</label>
+                <textarea name="description" id="editor" class="form-textarea" rows="4"><?= htmlspecialchars($item['description'] ?? '') ?></textarea>
             </div>
 
             <div class="cf-group mb-6">
@@ -114,18 +142,92 @@ if ($isEdit) {
                 <label class="toggle-switch mt-4">
                     <input type="checkbox" name="is_active" value="1" <?= (!isset($item) || $item['is_active'] == 1) ? 'checked' : '' ?>>
                     <span class="toggle-slider"></span>
-                    <span class="mr-3 font-bold text-pri-900">باقة مفعلة</span>
+                    <span class="mr-3 font-bold text-pri-900">باقة مفعلة (تظهر للزوار)</span>
                 </label>
                 <label class="toggle-switch mt-4">
                     <input type="checkbox" name="is_featured" value="1" <?= (isset($item) && $item['is_featured'] == 1) ? 'checked' : '' ?>>
                     <span class="toggle-slider"></span>
-                    <span class="mr-3 font-bold text-gld-600">باقة مميزة</span>
+                    <span class="mr-3 font-bold text-gld-600">باقة مميزة (تظهر في الرئيسية)</span>
                 </label>
             </div>
 
             <div class="-mt-4">
-                <button type="submit" class="btn btn-gold btn-lg shadow-xl w-full sm:w-auto"><i class="fas fa-save"></i> حفظ البيانات</button>
+                <button type="submit" class="btn btn-gold btn-lg shadow-xl w-full sm:w-auto"><i class="fas fa-save"></i> حفظ الباقة</button>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. تفعيل المحرر المتقدم CKEditor
+    if (document.querySelector('#editor')) {
+        CKEDITOR.ClassicEditor.create(document.querySelector('#editor'), {
+            language: 'ar',
+            toolbar: {
+                items: [
+                    'heading', '|',
+                    'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
+                    'bold', 'italic', 'underline', 'strikethrough', '|',
+                    'alignment', '|',
+                    'numberedList', 'bulletedList', '|',
+                    'outdent', 'indent', '|',
+                    'link', 'insertTable', 'blockQuote', 'horizontalLine', '|',
+                    'removeFormat', 'sourceEditing', 'undo', 'redo'
+                ],
+                shouldNotGroupWhenFull: true
+            },
+            list: { properties: { styles: true, startIndex: true, reversed: true } },
+            heading: {
+                options: [
+                    { model: 'paragraph', title: 'فقرة', class: 'ck-heading_paragraph' },
+                    { model: 'heading1', view: 'h1', title: 'عنوان 1', class: 'ck-heading_heading1' },
+                    { model: 'heading2', view: 'h2', title: 'عنوان 2', class: 'ck-heading_heading2' },
+                    { model: 'heading3', view: 'h3', title: 'عنوان 3', class: 'ck-heading_heading3' },
+                    { model: 'heading4', view: 'h4', title: 'عنوان 4', class: 'ck-heading_heading4' }
+                ]
+            },
+            fontFamily: {
+                options: [ 'default', 'Cairo, sans-serif', 'Amiri, serif', 'Arial, sans-serif' ],
+                supportAllValues: true
+            },
+            fontSize: {
+                options: [ 10, 12, 14, 'default', 18, 20, 24, 28, 32, 36 ],
+                supportAllValues: true
+            },
+            removePlugins: [
+                'CKBox', 'CKFinder', 'EasyImage', 'RealTimeCollaborativeComments', 'RealTimeCollaborativeTrackChanges', 'RealTimeCollaborativeRevisionHistory',
+                'PresenceList', 'Comments', 'TrackChanges', 'TrackChangesData', 'RevisionHistory', 'Pagination', 'WProofreader', 'MathType',
+                'SlashCommand', 'Template', 'DocumentOutline', 'FormatPainter', 'TableOfContents', 'PasteFromOfficeEnhanced', 'Autosave'
+            ]
+        }).catch(error => {
+            console.error(error);
+        });
+    }
+
+    // 2. التوليد التلقائي للرابط النظيف (Slug)
+    const nameInput = document.getElementById('pkgName');
+    const slugInput = document.getElementById('pkgSlug');
+
+    function generateSlug(text) {
+        return text.trim()
+            .replace(/\s+/g, '-') 
+            .replace(/[^\w\-\u0600-\u06FF]/g, '') 
+            .replace(/\-\-+/g, '-') 
+            .replace(/^-+/, '') 
+            .replace(/-+$/, ''); 
+    }
+
+    if (nameInput && slugInput) {
+        nameInput.addEventListener('input', function() {
+            if (slugInput.value === '' || !slugInput.hasAttribute('data-touched')) {
+                slugInput.value = generateSlug(this.value);
+            }
+        });
+
+        slugInput.addEventListener('input', function() {
+            this.setAttribute('data-touched', 'true');
+        });
+    }
+});
+</script>

@@ -11,12 +11,16 @@ if (empty($orderNumber)) {
 ?>
 
 <div class="max-w-3xl mx-auto px-4 py-16 mb-14 text-center afiu">
-    <div class="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
+    <div class="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-green-100">
         <i class="fas fa-check-circle text-6xl text-green-500 animate-pulse"></i>
     </div>
     
     <h1 class="text-3xl sm:text-4xl font-black text-pri-900 font-amiri mb-4">شكراً لك، تم استلام طلبك بنجاح!</h1>
-    <p class="text-brk-500 text-lg mb-8">نقدر ثقتك في متجر تشافي. سيتم تجهيز طلبك في أسرع وقت ممكن.</p>
+    
+    <!-- الرسالة المطلوبة بعد رفع التحويل البنكي -->
+    <div class="bg-pri-50 text-pri-800 font-bold p-4 rounded-xl border-2 border-pri-200 inline-block mx-auto mb-8 shadow-sm">
+        <i class="fas fa-clock ml-2 text-pri-600"></i> سوف يتم مراجعة الطلب والإيصال البنكي في خلال 48 ساعة
+    </div>
 
     <div class="erp-card p-8 mb-8 text-right relative overflow-hidden">
         <div class="absolute top-0 right-0 w-2 h-full bg-gld-500"></div>
@@ -29,7 +33,7 @@ if (empty($orderNumber)) {
             </div>
             <div>
                 <p class="text-brk-400 mb-1">حالة الطلب:</p>
-                <p class="font-bold text-gld-600 bg-gld-50 inline-block px-3 py-1 rounded-lg">قيد المراجعة والتجهيز</p>
+                <p class="font-bold text-yellow-600 bg-yellow-50 border border-yellow-200 inline-block px-3 py-1 rounded-lg">قيد المراجعة</p>
             </div>
         </div>
     </div>

@@ -36,8 +36,8 @@ $packages = $pdo->query("SELECT * FROM packages WHERE is_active = 1 ORDER BY is_
                             <span class="line-through text-brk-300 text-sm"><?= number_format($p['original_total_price'], 2) ?> ر.س</span>
                         </div>
                         <div class="text-center mb-6">
-                            <span class="text-4xl font-black text-pri-700"><?= number_format($p['package_price'], 2) ?></span>
-                            <span class="text-brk-400 text-sm mr-1">ر.س</span>
+                            <!-- التعديل تم هنا لكي يعمل السكربت على تحويل السعر والعملة بشكل سليم -->
+                            <span class="text-4xl font-black text-pri-700"><?= number_format($p['package_price'], 2) ?> ر.س</span>
                         </div>
                         <a href="index.php?page=package_details&id=<?= $p['id'] ?>" class="btn <?= $p['is_featured'] ? 'btn-gold' : 'btn-primary' ?> btn-block">
                             تفاصيل الباقة <i class="fas fa-arrow-left text-xs mr-1"></i>

@@ -1,6 +1,6 @@
 <?php
 // مسار الملف: ajax/checkout_action.php
-// الوظيفة: معالجة الطلب النهائي مع احتساب الكوبونات وحفظه بالـ Database بدقة
+// الوظيفة: معالجة الطلب النهائي مع احتساب الكوبونات ورفع الإيصال البنكي
 
 session_start();
 require_once '../config.php';
@@ -11,29 +11,53 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['cart'])) {
 }
 
 try {
-    // 1. حساب المجاميع من السلة والمخزون
     $cartItems = $_SESSION['cart'];
     $subTotal = 0;
+    $hasPhysicalItems = false;
+    $finalItems = [];
     
-    $ids = implode(',', array_keys($cartItems));
-    $stmt = $pdo->query("SELECT id, name, price, stock_quantity, image_url FROM products WHERE id IN ($ids)");
-    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    $productsDict = [];
-    foreach ($products as $p) {
-        $productsDict[$p['id']] = $p;
-        $qty = min($cartItems[$p['id']], $p['stock_quantity']); // تأمين عدم تجاوز المخزون
-        $subTotal += $p['price'] * $qty;
+    // حساب المجاميع من الجداول المختلفة لحماية البيانات
+    foreach ($cartItems as $key => $item) {
+        $table = 'products'; $nameCol = 'name'; $priceCol = 'price'; $imgCol = 'image_url';
+        if ($item['type'] === 'audio') { $table = 'audios'; $nameCol = 'title'; $imgCol = 'thumbnail_url'; }
+        elseif ($item['type'] === 'video') { $table = 'videos'; $nameCol = 'title'; $imgCol = 'thumbnail_url'; }
+        elseif ($item['type'] === 'package') { $table = 'packages'; $priceCol = 'package_price'; }
+        
+        $query = "SELECT id, $nameCol as name, $priceCol as price, $imgCol as image";
+        if ($item['type'] === 'product') $query .= ", stock_quantity, is_digital";
+        $query .= " FROM $table WHERE id = ?";
+        
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([$item['id']]);
+        $dbItem = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($dbItem) {
+            $qty = $item['qty'];
+            if ($item['type'] === 'product' && $dbItem['is_digital'] == 0) {
+                $qty = min($qty, $dbItem['stock_quantity']);
+                $hasPhysicalItems = true;
+            }
+            if ($qty <= 0) continue;
+            
+            $subTotal += $dbItem['price'] * $qty;
+            $finalItems[] = [
+                'type' => $item['type'],
+                'id' => $dbItem['id'],
+                'name' => $dbItem['name'],
+                'image' => $dbItem['image'],
+                'price' => $dbItem['price'],
+                'qty' => $qty
+            ];
+        }
     }
 
-    $shippingCost = $subTotal >= 200 ? 0 : 25;
+    $shippingCost = ($hasPhysicalItems && $subTotal > 0 && $subTotal < 200) ? 25 : 0;
     
-    // 2. التحقق وتطبيق الكوبون بدقة
+    // التحقق من الكوبون
     $couponId = null;
     $discountAmount = 0;
-
     if (isset($_SESSION['coupon_code']) && $subTotal > 0) {
-        $cStmt = $pdo->prepare("SELECT id, discount_type, discount_value, max_discount, min_order_amount FROM coupons WHERE code = ? AND is_active = 1 AND (expires_at IS NULL OR expires_at >= NOW())");
+        $cStmt = $pdo->prepare("SELECT id, discount_type, discount_value, max_discount, min_order_amount FROM coupons WHERE code = ? AND is_active = 1");
         $cStmt->execute([$_SESSION['coupon_code']]);
         $coupon = $cStmt->fetch();
 
@@ -47,69 +71,78 @@ try {
             } else {
                 $discountAmount = $coupon['discount_value'];
             }
-            
-            // زيادة عداد استخدام الكوبون (بأمان)
             $pdo->prepare("UPDATE coupons SET used_count = used_count + 1 WHERE id = ?")->execute([$couponId]);
         }
     }
 
     $totalAmount = max(0, $subTotal + $shippingCost - $discountAmount);
 
-    // 3. جلب بيانات العميل الممررة من الفورم
     $fullName = $_POST['full_name'] ?? 'عميل غير مسجل';
     $phone = $_POST['phone'] ?? '';
     $city = $_POST['city'] ?? '';
     $address = $_POST['address'] ?? '';
-    $paymentMethod = $_POST['payment_method'] ?? 'CashOnDelivery';
-    
-    // توليد رقم طلب فريد وجميل
+    $paymentMethod = $_POST['payment_method'] ?? 'BankTransfer';
     $orderNumber = "ORD-" . date("ymd") . "-" . strtoupper(substr(uniqid(), -4));
 
-    // 4. إنشاء الطلب في جدول orders
+    // --- معالجة رفع صورة إيصال التحويل ---
+    $receiptUrl = '';
+    if (isset($_FILES['transfer_receipt']) && $_FILES['transfer_receipt']['error'] == 0) {
+        $uploadDir = '../assets/uploads/receipts/';
+        if (!is_dir($uploadDir)) { mkdir($uploadDir, 0777, true); }
+        
+        // تنظيف اسم الملف
+        $fileName = time() . '_' . preg_replace('/[^a-zA-Z0-9.\-_]/', '', basename($_FILES['transfer_receipt']['name']));
+        $targetFile = $uploadDir . $fileName;
+        
+        if (move_uploaded_file($_FILES['transfer_receipt']['tmp_name'], $targetFile)) {
+            // حفظ المسار النسبي لقاعدة البيانات
+            $receiptUrl = 'assets/uploads/receipts/' . $fileName;
+        } else {
+            die("<script>alert('حدث خطأ أثناء رفع صورة الإيصال. يرجى المحاولة مرة أخرى.'); history.back();</script>");
+        }
+    } else {
+        die("<script>alert('صورة إيصال التحويل البنكي مطلوبة لإتمام الطلب.'); history.back();</script>");
+    }
+    // --------------------------------------
+
+    // إنشاء الطلب الرئيسي (مع حفظ مسار الإيصال)
+    // لاحظ: إذا لم يكن حقل transfer_receipt_url موجوداً في الـ Database، سيقوم setup_db بإنشائه لاحقاً بفضل الحماية التي أضفناها، ولكننا نرسله هنا.
     $stmtOrder = $pdo->prepare("
         INSERT INTO orders 
-        (order_number, user_id, sub_total, discount_amount, coupon_id, shipping_cost, total_amount, shipping_full_name, shipping_phone, shipping_city, shipping_address, payment_method, status) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
+        (order_number, user_id, sub_total, discount_amount, coupon_id, shipping_cost, total_amount, shipping_full_name, shipping_phone, shipping_city, shipping_address, payment_method, transfer_receipt_url, status) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
     ");
-    
-    $stmtOrder->execute([
-        $orderNumber, $_SESSION['user_id'], $subTotal, $discountAmount, $couponId, 
-        $shippingCost, $totalAmount, $fullName, $phone, $city, $address, $paymentMethod
-    ]);
-    
+    $stmtOrder->execute([$orderNumber, $_SESSION['user_id'], $subTotal, $discountAmount, $couponId, $shippingCost, $totalAmount, $fullName, $phone, $city, $address, $paymentMethod, $receiptUrl]);
     $orderId = $pdo->lastInsertId();
 
-    // حفظ سجل استخدام الكوبون للعميل
     if ($couponId) {
-        $pdo->prepare("INSERT INTO coupon_usage (coupon_id, user_id, order_id, discount_applied) VALUES (?, ?, ?, ?)")
-            ->execute([$couponId, $_SESSION['user_id'], $orderId, $discountAmount]);
+        $pdo->prepare("INSERT INTO coupon_usage (coupon_id, user_id, order_id, discount_applied) VALUES (?, ?, ?, ?)")->execute([$couponId, $_SESSION['user_id'], $orderId, $discountAmount]);
     }
 
-    // 5. حفظ عناصر الطلب وتحديث مخزون المنتجات
-    $stmtItem = $pdo->prepare("INSERT INTO order_items (order_id, item_type, item_id, item_name, item_image, unit_price, quantity, total_price) VALUES (?, 'product', ?, ?, ?, ?, ?, ?)");
+    // حفظ عناصر الطلب وتحديث المخزون والإحصائيات
+    $stmtItem = $pdo->prepare("INSERT INTO order_items (order_id, item_type, item_id, item_name, item_image, unit_price, quantity, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
     $stmtUpdateStock = $pdo->prepare("UPDATE products SET stock_quantity = stock_quantity - ?, sales_count = sales_count + ? WHERE id = ?");
-
-    foreach ($cartItems as $pid => $qty) {
-        if (!isset($productsDict[$pid])) continue;
+    $stmtUpdateAudioSales = $pdo->prepare("UPDATE audios SET download_count = download_count + ? WHERE id = ?");
+    $stmtUpdateVideoSales = $pdo->prepare("UPDATE videos SET view_count = view_count + ? WHERE id = ?");
+    
+    foreach ($finalItems as $fi) {
+        $pTotal = $fi['price'] * $fi['qty'];
+        $stmtItem->execute([$orderId, $fi['type'], $fi['id'], $fi['name'], $fi['image'], $fi['price'], $fi['qty'], $pTotal]);
         
-        $p = $productsDict[$pid];
-        $actualQty = min($qty, $p['stock_quantity']);
-        if ($actualQty <= 0) continue;
-
-        $pTotal = $p['price'] * $actualQty;
-        
-        // إدخال تفاصيل الصنف
-        $stmtItem->execute([$orderId, $pid, $p['name'], $p['image_url'], $p['price'], $actualQty, $pTotal]);
-        
-        // تقليل المخزون وزيادة عداد المبيعات للمنتج
-        $stmtUpdateStock->execute([$actualQty, $actualQty, $pid]);
+        // تحديث المخزون والإحصائيات بناءً على النوع
+        if ($fi['type'] === 'product') {
+            $stmtUpdateStock->execute([$fi['qty'], $fi['qty'], $fi['id']]);
+        } elseif ($fi['type'] === 'audio') {
+            $stmtUpdateAudioSales->execute([$fi['qty'], $fi['id']]);
+        } elseif ($fi['type'] === 'video') {
+            $stmtUpdateVideoSales->execute([$fi['qty'], $fi['id']]);
+        }
     }
 
-    // 6. تصفير السلة وجلسة الكوبون بعد إتمام الطلب بنجاح
+    // تفريغ السلة والكوبون بعد إتمام الطلب بنجاح
     unset($_SESSION['cart']);
     unset($_SESSION['coupon_code']);
     
-    // توجيه لصفحة النجاح مع تمرير رقم الطلب
     header("Location: ../index.php?page=success&order=" . $orderNumber);
     exit;
 

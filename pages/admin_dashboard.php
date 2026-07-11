@@ -1,6 +1,6 @@
 <?php
 // مسار الملف: pages/admin_dashboard.php
-// النسخة الشاملة — مربوطة بكل صفحات الإدارة الـ 25+
+// النسخة الشاملة والمطورة — سهلة الاستخدام ومربوطة بكل النظام (شاملة جميع الشارتات)
 
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_role'], ['Admin', 'SuperAdmin'])) {
     echo "<script>window.location.href='index.php';</script>"; exit;
@@ -31,6 +31,11 @@ $mediaCount      = $pdo->query("SELECT COUNT(*) FROM media")->fetchColumn();
 $cmsPagesCount   = $pdo->query("SELECT COUNT(*) FROM cms_pages")->fetchColumn();
 $zonesCount      = $pdo->query("SELECT COUNT(*) FROM shipping_zones WHERE is_active = 1")->fetchColumn();
 
+// إحصائيات الحجوزات (الجديدة)
+$apptCount       = $pdo->query("SELECT COUNT(*) FROM appointments")->fetchColumn();
+$pendingAppt     = $pdo->query("SELECT COUNT(*) FROM appointments WHERE status = 'Pending'")->fetchColumn();
+$confirmedAppt   = $pdo->query("SELECT COUNT(*) FROM appointments WHERE status = 'Confirmed'")->fetchColumn();
+
 $totalRevenue    = $pdo->query("SELECT COALESCE(SUM(total_amount),0) FROM orders WHERE status NOT IN ('Cancelled','Refunded')")->fetchColumn();
 $monthRevenue    = $pdo->query("SELECT COALESCE(SUM(total_amount),0) FROM orders WHERE status NOT IN ('Cancelled','Refunded') AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")->fetchColumn();
 $weekRevenue     = $pdo->query("SELECT COALESCE(SUM(total_amount),0) FROM orders WHERE status NOT IN ('Cancelled','Refunded') AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)")->fetchColumn();
@@ -41,8 +46,9 @@ $totalAudioListens = $pdo->query("SELECT COALESCE(SUM(listen_count),0) FROM audi
 $totalVideoViews  = $pdo->query("SELECT COALESCE(SUM(view_count),0) FROM videos")->fetchColumn();
 $totalSales       = $pdo->query("SELECT COALESCE(SUM(sales_count),0) FROM products")->fetchColumn();
 
-// 2. أحدث 5 طلبات
-$recentOrders = $pdo->query("SELECT o.*, u.full_name, u.email FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.id DESC LIMIT 5")->fetchAll();
+// 2. أحدث الطلبات والحجوزات
+$recentOrders = $pdo->query("SELECT o.*, u.full_name, u.email FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.id DESC LIMIT 5")->fetchAll();
+$recentAppts  = $pdo->query("SELECT * FROM appointments ORDER BY id DESC LIMIT 5")->fetchAll();
 
 // 3. منتجات نفاد المخزون
 $lowStockProducts = $pdo->query("SELECT id, name, stock_quantity, low_stock_threshold, image_url FROM products WHERE stock_quantity <= low_stock_threshold AND manage_stock = 1 AND is_active = 1 ORDER BY stock_quantity ASC LIMIT 5")->fetchAll();
@@ -79,50 +85,74 @@ function fmtD($n) { return number_format($n, 2); }
     <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-8 gap-4 afiu">
         <div>
             <h1 class="text-3xl font-black text-pri-900 font-amiri flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-pri-500 to-pri-800 flex items-center justify-center text-gld-400 text-xl shadow-lg">📊</div>
-                لوحة القيادة
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-pri-500 to-pri-800 flex items-center justify-center text-gld-400 text-xl shadow-lg"><i class="fas fa-tachometer-alt"></i></div>
+                لوحة القيادة الشاملة
             </h1>
-            <p class="text-brk-400 text-sm mt-1 mr-4">مرحباً <?= htmlspecialchars($_SESSION['user_name']) ?> — آخر تحديث: <?= date('Y/m/d H:i') ?></p>
+            <p class="text-brk-400 text-sm mt-1 mr-4">مرحباً <?= htmlspecialchars($_SESSION['user_name']) ?> — نظرة عامة شاملة على أداء المتجر والجلسات.</p>
         </div>
         <div class="flex gap-2 flex-wrap">
             <a href="index.php" target="_blank" class="cf-btn cf-btn-out cf-btn-sm bg-white text-xs"><i class="fas fa-external-link-alt"></i> زيارة المتجر</a>
-            <a href="index.php?page=admin_reports" class="cf-btn cf-btn-pri cf-btn-sm text-xs"><i class="fas fa-chart-bar"></i> التقارير</a>
+            <a href="index.php?page=admin_reports" class="cf-btn cf-btn-pri cf-btn-sm text-xs"><i class="fas fa-chart-bar"></i> التقارير المالية</a>
         </div>
     </div>
 
     <!-- ═══ بطاقات الإحصائيات — الصف الأول ═══ -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 afiu" style="animation-delay:.05s">
-        <div class="dash-stat-card bg-gradient-to-br from-pri-600 to-pri-800 text-white">
-            <div class="dash-stat-icon bg-white/15"><i class="fas fa-folder-open"></i></div>
-            <div class="dash-stat-val"><?= fmt($catsCount) ?></div>
-            <div class="dash-stat-label">الأقسام</div>
-            <div class="dash-stat-sub"><?= fmt($subCatsCount) ?> فرعي</div>
+        <!-- الإيرادات -->
+        <div class="dash-stat-card bg-gradient-to-br from-pri-600 to-pri-800 text-white border-b-4 border-gld-400 shadow-lg">
+            <div class="dash-stat-icon bg-gld-400/30 text-gld-300"><i class="fas fa-wallet"></i></div>
+            <div class="dash-stat-val"><?= fmt($totalRevenue) ?> <span class="text-sm font-normal">ر.س</span></div>
+            <div class="dash-stat-label text-pri-100">إجمالي المبيعات</div>
+            <div class="dash-stat-sub text-gld-200">المبيعات هذا الشهر: <strong><?= fmt($monthRevenue) ?> ر.س</strong></div>
         </div>
-        <div class="dash-stat-card bg-gradient-to-br from-gld-500 to-gld-700 text-white">
-            <div class="dash-stat-icon bg-white/15"><i class="fas fa-box"></i></div>
-            <div class="dash-stat-val"><?= fmt($prodsCount) ?></div>
-            <div class="dash-stat-label">المنتجات</div>
-            <div class="dash-stat-sub"><?= fmt($activeProds) ?> مفعّل</div>
+
+        <!-- الطلبات -->
+        <a href="index.php?page=admin_orders" class="dash-stat-card bg-white border border-gray-100 text-gray-800 hover:border-blue-300 transition block">
+            <div class="dash-stat-icon bg-blue-50 text-blue-500"><i class="fas fa-shopping-cart"></i></div>
+            <div class="dash-stat-val text-pri-900"><?= fmt($ordersCount) ?></div>
+            <div class="dash-stat-label text-gray-500">الطلبات</div>
+            <div class="dash-stat-sub text-gray-500 flex justify-between">
+                <span>تأكيد: <strong class="text-blue-600"><?= $pendingOrders ?></strong></span>
+                <span>تجهيز: <strong class="text-orange-500"><?= $processingOrders ?></strong></span>
+            </div>
+        </a>
+
+        <!-- الحجوزات (الجديدة) -->
+        <a href="index.php?page=admin_appointments" class="dash-stat-card bg-white border border-gray-100 text-gray-800 hover:border-gld-300 transition block relative overflow-hidden">
+            <?php if($pendingAppt > 0): ?><span class="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg animate-pulse">جديد</span><?php endif; ?>
+            <div class="dash-stat-icon bg-gld-50 text-gld-600"><i class="fas fa-video"></i></div>
+            <div class="dash-stat-val text-pri-900"><?= fmt($apptCount) ?></div>
+            <div class="dash-stat-label text-gray-500">حجوزات الجلسات</div>
+            <div class="dash-stat-sub text-gray-500 flex justify-between">
+                <span>مراجعة: <strong class="text-red-500"><?= $pendingAppt ?></strong></span>
+                <span>مؤكد: <strong class="text-green-600"><?= $confirmedAppt ?></strong></span>
+            </div>
+        </a>
+
+        <!-- العملاء -->
+        <div class="dash-stat-card bg-white border border-gray-100 text-gray-800">
+            <div class="dash-stat-icon bg-purple-50 text-purple-500"><i class="fas fa-users"></i></div>
+            <div class="dash-stat-val text-pri-900"><?= fmt($usersCount) ?></div>
+            <div class="dash-stat-label text-gray-500">العملاء والرسائل</div>
+            <div class="dash-stat-sub text-gray-500 flex justify-between">
+                <a href="index.php?page=admin_messages" class="hover:text-pri-600">رسائل: <strong class="text-purple-600"><?= $newMessages ?></strong></a>
+                <a href="index.php?page=admin_reviews" class="hover:text-pri-600">تقييمات: <strong class="text-orange-500"><?= $pendingReviews ?></strong></a>
+            </div>
         </div>
-        <div class="dash-stat-card bg-gradient-to-br from-blue-500 to-blue-700 text-white">
-            <div class="dash-stat-icon bg-white/15"><i class="fas fa-shopping-cart"></i></div>
-            <div class="dash-stat-val"><?= fmt($ordersCount) ?></div>
-            <div class="dash-stat-label">الطلبات</div>
-            <div class="dash-stat-sub"><?= fmt($pendingOrders) ?> بانتظار</div>
+
+        <!-- المنتجات -->
+        <div class="dash-stat-card bg-white border border-gray-100 text-gray-800">
+            <div class="dash-stat-icon bg-green-50 text-green-600"><i class="fas fa-box"></i></div>
+            <div class="dash-stat-val text-pri-900"><?= fmt($prodsCount) ?></div>
+            <div class="dash-stat-label text-gray-500">المنتجات الملموسة</div>
+            <div class="dash-stat-sub text-gray-500 flex justify-between">
+                <span>نشط: <strong><?= fmt($activeProds) ?></strong></span>
+                <span>أقسام: <strong><?= fmt($catsCount) ?></strong></span>
+            </div>
         </div>
-        <div class="dash-stat-card bg-gradient-to-br from-purple-500 to-purple-700 text-white">
-            <div class="dash-stat-icon bg-white/15"><i class="fas fa-users"></i></div>
-            <div class="dash-stat-val"><?= fmt($usersCount) ?></div>
-            <div class="dash-stat-label">العملاء</div>
-            <div class="dash-stat-sub">+<?= fmt($newUsersMonth) ?> هذا الشهر</div>
-        </div>
-        <div class="dash-stat-card bg-gradient-to-br from-pri-500 to-pri-800 text-white border-b-4 border-gld-400">
-            <div class="dash-stat-icon bg-gld-400/30 text-gld-300"><i class="fas fa-money-bill-wave"></i></div>
-            <div class="dash-stat-val"><?= fmt($totalRevenue) ?></div>
-            <div class="dash-stat-label">إجمالي المبيعات (ر.س)</div>
-            <div class="dash-stat-sub text-gld-200">هذا الشهر: <?= fmt($monthRevenue) ?></div>
-        </div>
-        <div class="dash-stat-card <?= $lowStock > 0 ? 'from-red-500 to-red-700' : 'from-green-500 to-green-700' ?> bg-gradient-to-br text-white">
+
+        <!-- تنبيهات المخزون -->
+        <div class="dash-stat-card <?= $lowStock > 0 ? 'bg-gradient-to-br from-red-500 to-red-700' : 'bg-gradient-to-br from-green-500 to-green-700' ?> text-white">
             <div class="dash-stat-icon bg-white/15"><i class="fas fa-exclamation-triangle"></i></div>
             <div class="dash-stat-val"><?= $lowStock ?></div>
             <div class="dash-stat-label">مخزون منخفض</div>
@@ -184,9 +214,9 @@ function fmtD($n) { return number_format($n, 2); }
     <!-- ═══ المحتوى الرئيسي: 3 أعمدة ═══ -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <!-- ═══ العمود الأيسر: الوصول السريع (9 أعمدة) ═══ -->
+        <!-- ═══ العمود الأيسر: الوصول السريع (3 أعمدة) ═══ -->
         <div class="lg:col-span-3 space-y-5 afiu" style="animation-delay:.12s">
-
+            
             <!-- إدارة المحتوى -->
             <div class="dash-section">
                 <h3 class="dash-section-title"><i class="fas fa-boxes text-gld-500"></i> إدارة المحتوى</h3>
@@ -219,26 +249,63 @@ function fmtD($n) { return number_format($n, 2); }
                     <a href="index.php?page=admin_orders" class="dash-link"><i class="fas fa-truck text-purple-400"></i><span>تم الشحن</span><span class="dash-link-count"><?= fmt($shippedOrders) ?></span></a>
                     <?php endif; ?>
                     <a href="index.php?page=admin_offers" class="dash-link"><i class="fas fa-tags text-red-400"></i><span>العروض</span></a>
-                    <a href="index.php?page=admin_offer_form" class="dash-link dash-link-add"><i class="fas fa-plus-circle text-red-300"></i><span>عرض جديد</span></a>
                 </div>
             </div>
 
-            <!-- التسويق والمحتوى الرقمي -->
+            <!-- التسويق والإعدادات -->
             <div class="dash-section">
-                <h3 class="dash-section-title"><i class="fas fa-bullhorn text-purple-500"></i> التسويق والرقمي</h3>
+                <h3 class="dash-section-title"><i class="fas fa-cogs text-brk-500"></i> النظام والتسويق</h3>
                 <div class="dash-link-grid">
-                    <a href="index.php?page=admin_advertisements" class="dash-link"><i class="fas fa-images text-purple-500"></i><span>الإعلانات</span><span class="dash-link-count"><?= fmt($adsCount) ?></span></a>
-                    <a href="index.php?page=admin_advertisement_form" class="dash-link dash-link-add"><i class="fas fa-plus-circle text-purple-300"></i><span>إعلان جديد</span></a>
-                    <a href="index.php?page=admin_coupons" class="dash-link"><i class="fas fa-ticket-alt text-green-500"></i><span>الكوبونات</span><span class="dash-link-count"><?= fmt($couponsCount) ?></span></a>
-                    <a href="index.php?page=admin_coupon_form" class="dash-link dash-link-add"><i class="fas fa-plus-circle text-green-300"></i><span>كوبون جديد</span></a>
-                    <a href="index.php?page=admin_media" class="dash-link"><i class="fas fa-photo-video text-pink-500"></i><span>المكتبة الرقمية</span><span class="dash-link-count"><?= fmt($mediaCount) ?></span></a>
-                    <a href="index.php?page=admin_tags" class="dash-link"><i class="fas fa-tags text-gld-600"></i><span>الوسوم</span><span class="dash-link-count"><?= fmt($tagsCount) ?></span></a>
+                    <a href="index.php?page=admin_users" class="dash-link"><i class="fas fa-users text-blue-500"></i><span>المستخدمين</span><span class="dash-link-count"><?= fmt($usersCount) ?></span></a>
+                    <a href="index.php?page=admin_shipping_zones" class="dash-link"><i class="fas fa-truck text-green-600"></i><span>مناطق الشحن</span><span class="dash-link-count"><?= fmt($zonesCount) ?></span></a>
+                    <a href="index.php?page=admin_cms_pages" class="dash-link"><i class="fas fa-file-alt text-brk-500"></i><span>الصفحات</span><span class="dash-link-count"><?= fmt($cmsPagesCount) ?></span></a>
+                    <a href="index.php?page=admin_settings" class="dash-link"><i class="fas fa-sliders-h text-brk-500"></i><span>الإعدادات</span></a>
+                    <?php if($isSuperAdmin): ?>
+                    <a href="index.php?page=admin_roles" class="dash-link"><i class="fas fa-shield-alt text-gld-600"></i><span>الصلاحيات</span></a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
 
-        <!-- ═══ العمود الأوسط: البيانات الحية (6 أعمدة) ═══ -->
+        <!-- ═══ العمود الأوسط: البيانات الحية (5 أعمدة) ═══ -->
         <div class="lg:col-span-5 space-y-5 afiu" style="animation-delay:.15s">
+
+            <!-- أحدث حجوزات الجلسات (جديد) -->
+            <div class="dash-section border-2 border-pri-100 shadow-md relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-1.5 h-full bg-gld-500"></div>
+                <div class="flex items-center justify-between mb-0 bg-pri-50 border-b border-pri-100 p-3 px-4">
+                    <h3 class="dash-section-title !mb-0 !border-0 !p-0 !bg-transparent"><i class="fas fa-video text-pri-600"></i> أحدث طلبات الجلسات</h3>
+                    <a href="index.php?page=admin_appointments" class="text-xs font-bold text-pri-600 hover:text-gld-600 transition bg-white px-3 py-1 rounded-full shadow-sm">إدارة الحجوزات</a>
+                </div>
+                <div class="divide-y divide-gray-50 p-2">
+                    <?php if(empty($recentAppts)): ?>
+                        <div class="text-center py-8 text-brk-300 text-sm"><i class="fas fa-calendar-times text-2xl mb-2 block opacity-40"></i>لا توجد حجوزات</div>
+                    <?php else: ?>
+                        <?php foreach($recentAppts as $apt): 
+                            $aptStatus = [
+                                'Pending' => ['text'=>'مراجعة', 'color'=>'bg-yellow-50 text-yellow-700'],
+                                'Confirmed' => ['text'=>'مؤكد', 'color'=>'bg-green-50 text-green-700'],
+                                'Completed' => ['text'=>'منتهي', 'color'=>'bg-gray-100 text-gray-600'],
+                                'Cancelled' => ['text'=>'ملغي', 'color'=>'bg-red-50 text-red-700']
+                            ][$apt['status']] ?? ['text'=>$apt['status'], 'color'=>'bg-gray-100'];
+                        ?>
+                        <div class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition">
+                            <div class="w-10 h-10 rounded-full bg-pri-100 text-pri-600 flex items-center justify-center text-sm font-bold shrink-0"><i class="fas fa-user"></i></div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-bold text-pri-900 truncate"><?= htmlspecialchars($apt['full_name']) ?></span>
+                                    <span class="badge <?= $aptStatus['color'] ?> !text-[10px] !py-0 !px-1.5"><?= $aptStatus['text'] ?></span>
+                                </div>
+                                <div class="text-xs text-brk-500 mt-1 truncate">الوقت: <?= htmlspecialchars($apt['preferred_time']) ?></div>
+                            </div>
+                            <?php if($apt['status'] == 'Confirmed'): ?>
+                                <a href="index.php?page=meeting&id=<?= $apt['id'] ?>" target="_blank" class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs hover:bg-green-500 hover:text-white transition shrink-0 shadow-sm" title="دخول الغرفة"><i class="fas fa-video"></i></a>
+                            <?php endif; ?>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
 
             <!-- إيرادات آخر 7 أيام — شارت بسيط -->
             <div class="dash-section">
@@ -295,11 +362,11 @@ function fmtD($n) { return number_format($n, 2); }
 
             <!-- أحدث الطلبات -->
             <div class="dash-section">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="dash-section-title !mb-0 !border-0 !pb-0"><i class="fas fa-clock text-blue-500"></i> أحدث الطلبات</h3>
-                    <a href="index.php?page=admin_orders" class="text-xs font-bold text-pri-600 hover:text-gld-600 transition">عرض الكل →</a>
+                <div class="flex items-center justify-between mb-0 p-3 px-4 border-b border-gray-100 bg-gray-50">
+                    <h3 class="dash-section-title !mb-0 !border-0 !p-0 !bg-transparent"><i class="fas fa-shopping-bag text-blue-500"></i> أحدث طلبات المتجر</h3>
+                    <a href="index.php?page=admin_orders" class="text-xs font-bold text-pri-600 hover:text-gld-600 transition bg-white px-3 py-1 rounded-full shadow-sm">عرض الكل →</a>
                 </div>
-                <div class="divide-y divide-gray-50">
+                <div class="divide-y divide-gray-50 p-2">
                     <?php if(empty($recentOrders)): ?>
                         <div class="text-center py-8 text-brk-300 text-sm"><i class="fas fa-inbox text-2xl mb-2 block opacity-40"></i>لا توجد طلبات</div>
                     <?php else: ?>
@@ -307,20 +374,19 @@ function fmtD($n) { return number_format($n, 2); }
                             $sClr = $statusClr[$o['status']] ?? 'bg-gray-100 text-gray-600';
                             $sAr  = $statusAr[$o['status']] ?? $o['status'];
                         ?>
-                        <div class="flex items-center gap-3 py-3 hover:bg-gray-50/50 px-2 -mx-2 rounded-lg transition">
-                            <div class="w-9 h-9 rounded-full bg-pri-50 text-pri-600 flex items-center justify-center text-sm font-bold shrink-0"><?= mb_substr($o['full_name'], 0, 1) ?></div>
+                        <div class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition">
+                            <div class="w-10 h-10 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold shrink-0" dir="ltr">#<?= substr($o['order_number'], -4) ?></div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-2">
-                                    <span class="text-xs font-bold text-pri-900 truncate"><?= htmlspecialchars($o['full_name']) ?></span>
+                                    <span class="text-sm font-bold text-pri-900 truncate"><?= htmlspecialchars($o['shipping_full_name'] ?? $o['full_name']) ?></span>
                                     <span class="badge <?= $sClr ?> !text-[9px] !py-0 !px-1.5"><?= $sAr ?></span>
                                 </div>
-                                <div class="text-[10px] text-brk-400" dir="ltr"><?= $o['order_number'] ?></div>
+                                <div class="text-[10px] text-brk-400 mt-1" dir="ltr"><?= date('m/d H:i', strtotime($o['created_at'])) ?></div>
                             </div>
                             <div class="text-left shrink-0">
-                                <div class="text-xs font-black text-pri-700"><?= fmtD($o['total_amount']) ?></div>
-                                <div class="text-[9px] text-brk-300" dir="ltr"><?= date('m/d H:i', strtotime($o['created_at'])) ?></div>
+                                <div class="text-sm font-black text-pri-700"><?= fmtD($o['total_amount']) ?> ر.س</div>
                             </div>
-                            <a href="index.php?page=admin_order_details&id=<?= $o['id'] ?>" class="w-7 h-7 rounded-lg bg-gray-50 text-brk-400 flex items-center justify-center text-[10px] hover:bg-pri-50 hover:text-pri-600 transition shrink-0" title="عرض التفاصيل"><i class="fas fa-eye"></i></a>
+                            <a href="index.php?page=admin_order_details&id=<?= $o['id'] ?>" class="w-8 h-8 rounded-full bg-gray-100 text-brk-500 flex items-center justify-center text-xs hover:bg-pri-50 hover:text-pri-600 transition shrink-0" title="عرض التفاصيل"><i class="fas fa-eye"></i></a>
                         </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -349,127 +415,13 @@ function fmtD($n) { return number_format($n, 2); }
             </div>
         </div>
 
-        <!-- ═══ العمود الأيمن: التنبيهات + أفضل + إعدادات (3 أعمدة) ═══ -->
+        <!-- ═══ العمود الأيمن: التنبيهات + أفضل المنتجات + اختصارات (4 أعمدة) ═══ -->
         <div class="lg:col-span-4 space-y-5 afiu" style="animation-delay:.2s">
 
-            <!-- تنبيهات المخزون -->
-            <?php if($lowStock > 0): ?>
-            <div class="dash-section !border-red-200">
-                <h3 class="dash-section-title !text-red-600"><i class="fas fa-exclamation-triangle"></i> تنبيهات المخزون</h3>
-                <div class="space-y-2">
-                    <?php foreach($lowStockProducts as $lp): ?>
-                    <div class="flex items-center gap-3 p-2.5 rounded-xl bg-red-50 border border-red-100">
-                        <img src="<?= htmlspecialchars($lp['image_url'] ?? 'https://picsum.photos/80') ?>" class="w-10 h-10 rounded-lg object-cover border border-red-100">
-                        <div class="flex-1 min-w-0">
-                            <div class="text-xs font-bold text-pri-900 truncate"><?= htmlspecialchars($lp['name']) ?></div>
-                            <div class="text-[10px] text-brk-400">الحد الأدنى: <?= $lp['low_stock_threshold'] ?></div>
-                        </div>
-                        <div class="text-center shrink-0">
-                            <div class="text-base font-black <?= $lp['stock_quantity'] == 0 ? 'text-red-600' : 'text-yellow-600' ?>"><?= $lp['stock_quantity'] ?></div>
-                            <div class="text-[9px] text-brk-400">متبقي</div>
-                        </div>
-                        <a href="index.php?page=admin_product_form&id=<?= $lp['id'] ?>" class="w-7 h-7 rounded-lg bg-white text-brk-400 flex items-center justify-center text-[10px] hover:bg-pri-50 hover:text-pri-600 transition shrink-0 border border-gray-100" title="تعديل"><i class="fas fa-edit"></i></a>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-                <a href="index.php?page=admin_products" class="block text-center text-xs font-bold text-red-600 hover:text-red-700 mt-3 py-2 bg-red-50 rounded-xl transition">عرض كل المنتجات المنخفضة ←</a>
-            </div>
-            <?php endif; ?>
-
-            <!-- رسائل جديدة -->
-            <?php if($newMessages > 0): ?>
-            <div class="dash-section">
-                <h3 class="dash-section-title"><i class="fas fa-envelope-open-text text-blue-500"></i> رسائل جديدة <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full"><?= $newMessages ?></span></h3>
-                <div class="space-y-2">
-                    <?php foreach($newMsgs as $m): ?>
-                    <div class="flex items-start gap-3 p-3 rounded-xl bg-blue-50/50 border border-blue-100">
-                        <div class="w-8 h-8 min-w-[32px] rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold mt-0.5"><?= mb_substr($m['full_name'], 0, 1) ?></div>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-xs font-bold text-pri-900 truncate"><?= htmlspecialchars($m['full_name']) ?></div>
-                            <div class="text-[10px] text-pri-600 truncate"><?= htmlspecialchars($m['subject'] ?? 'بدون موضوع') ?></div>
-                            <div class="text-[9px] text-brk-300" dir="ltr"><?= date('m/d H:i', strtotime($m['created_at'])) ?></div>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-                <a href="index.php?page=admin_messages" class="block text-center text-xs font-bold text-blue-600 hover:text-blue-700 mt-3 py-2 bg-blue-50 rounded-xl transition">عرض كل الرسائل ←</a>
-            </div>
-            <?php endif; ?>
-
-            <!-- أفضل المنتجات مبيعاً -->
-            <div class="dash-section">
-                <h3 class="dash-section-title"><i class="fas fa-trophy text-gld-500"></i> أفضل المنتجات مبيعاً</h3>
-                <div class="space-y-2.5">
-                    <?php if(empty($topProducts)): ?>
-                        <div class="text-center py-4 text-brk-300 text-sm">لا توجد مبيعات بعد</div>
-                    <?php else: ?>
-                        <?php foreach($topProducts as $i => $tp): ?>
-                        <a href="index.php?page=admin_product_form&id=<?= $tp['id'] ?>" class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition no-underline">
-                            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0
-                                <?= $i == 0 ? 'bg-gld-500 text-white shadow-md' : ($i == 1 ? 'bg-gray-200 text-brk-600' : 'bg-gray-100 text-brk-400') ?>
-                            "><?= $i + 1 ?></div>
-                            <img src="<?= htmlspecialchars($tp['image_url'] ?? 'https://picsum.photos/60') ?>" class="w-9 h-9 rounded-lg object-cover border border-gray-100 shrink-0">
-                            <div class="flex-1 min-w-0">
-                                <div class="text-xs font-bold text-pri-900 truncate"><?= htmlspecialchars($tp['name']) ?></div>
-                                <div class="text-[10px] text-brk-400"><?= fmtD($tp['price']) ?> ر.س</div>
-                            </div>
-                            <div class="text-left shrink-0">
-                                <div class="text-xs font-black text-pri-700"><?= fmt($tp['sales_count']) ?></div>
-                                <div class="text-[8px] text-brk-300">مبيع</div>
-                            </div>
-                        </a>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- إحصائيات سريعة -->
-            <div class="dash-section">
-                <h3 class="dash-section-title"><i class="fas fa-tachometer-alt text-brk-500"></i> ملخص سريع</h3>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="bg-gray-50 rounded-xl p-3 text-center">
-                        <div class="text-lg font-black text-pri-700"><?= fmtD($avgOrder) ?></div>
-                        <div class="text-[10px] text-brk-400">متوسط الطلب (ر.س)</div>
-                    </div>
-                    <div class="bg-gray-50 rounded-xl p-3 text-center">
-                        <div class="text-lg font-black text-gld-600"><?= fmt($totalSales) ?></div>
-                        <div class="text-[10px] text-brk-400">إجمالي المبيعات</div>
-                    </div>
-                    <div class="bg-gray-50 rounded-xl p-3 text-center">
-                        <div class="text-lg font-black text-blue-600"><?= fmt($totalAudioListens) ?></div>
-                        <div class="text-[10px] text-brk-400">استماع صوتي</div>
-                    </div>
-                    <div class="bg-gray-50 rounded-xl p-3 text-center">
-                        <div class="text-lg font-black text-purple-600"><?= fmt($totalVideoViews) ?></div>
-                        <div class="text-[10px] text-brk-400">مشاهدة فيديو</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ═══ الإعدادات والنظام ═══ -->
-            <div class="dash-section">
-                <h3 class="dash-section-title"><i class="fas fa-cogs text-brk-500"></i> النظام والإعدادات</h3>
-                <div class="dash-link-grid">
-                    <a href="index.php?page=admin_users" class="dash-link"><i class="fas fa-users text-blue-500"></i><span>المستخدمين</span><span class="dash-link-count"><?= fmt($usersCount) ?></span></a>
-                    <a href="index.php?page=admin_user_form" class="dash-link dash-link-add"><i class="fas fa-user-plus text-blue-400"></i><span>مستخدم جديد</span></a>
-                    <a href="index.php?page=admin_shipping_zones" class="dash-link"><i class="fas fa-truck text-green-600"></i><span>مناطق الشحن</span><span class="dash-link-count"><?= fmt($zonesCount) ?></span></a>
-                    <a href="index.php?page=admin_shipping_zone_form" class="dash-link dash-link-add"><i class="fas fa-plus-circle text-green-400"></i><span>منطقة جديدة</span></a>
-                    <a href="index.php?page=admin_cms_pages" class="dash-link"><i class="fas fa-file-alt text-brk-500"></i><span>الصفحات التعريفية</span><span class="dash-link-count"><?= fmt($cmsPagesCount) ?></span></a>
-                    <a href="index.php?page=admin_cms_page_form" class="dash-link dash-link-add"><i class="fas fa-plus-circle text-brk-400"></i><span>صفحة جديدة</span></a>
-                    <a href="index.php?page=admin_newsletter" class="dash-link"><i class="fas fa-newspaper text-pri-400"></i><span>النشرة البريدية</span></a>
-                    <a href="index.php?page=admin_settings" class="dash-link"><i class="fas fa-sliders-h text-brk-500"></i><span>الإعدادات</span></a>
-                    <a href="index.php?page=admin_settings_form" class="dash-link dash-link-add"><i class="fas fa-edit text-brk-400"></i><span>تعديل الإعدادات</span></a>
-                    <?php if($isSuperAdmin): ?>
-                    <a href="index.php?page=admin_roles" class="dash-link"><i class="fas fa-shield-alt text-gld-600"></i><span>الصلاحيات</span></a>
-                    <?php endif; ?>
-                    <a href="index.php?page=admin_reports" class="dash-link"><i class="fas fa-chart-bar text-pri-500"></i><span>التقارير المتقدمة</span></a>
-                </div>
-            </div>
-
-            <!-- اختصار سريع -->
+            <!-- إضافة سريعة (Grid) -->
             <div class="bg-gradient-to-br from-pri-50 to-gld-50/30 rounded-2xl p-5 border border-pri-100">
                 <div class="text-center mb-4">
-                    <div class="text-[10px] font-bold text-brk-400 uppercase tracking-wider mb-1">اختصارات سريعة</div>
+                    <div class="text-[10px] font-bold text-brk-400 uppercase tracking-wider mb-1">اختصارات إضافة سريعة</div>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
                     <a href="index.php?page=admin_product_form" class="flex flex-col items-center gap-1.5 p-3 bg-white rounded-xl hover:shadow-md transition no-underline group">
@@ -498,6 +450,97 @@ function fmtD($n) { return number_format($n, 2); }
                     </a>
                 </div>
             </div>
+
+            <!-- أفضل المنتجات مبيعاً -->
+            <div class="dash-section">
+                <h3 class="dash-section-title"><i class="fas fa-trophy text-gld-500"></i> أفضل المنتجات مبيعاً</h3>
+                <div class="space-y-2.5 p-3">
+                    <?php if(empty($topProducts)): ?>
+                        <div class="text-center py-4 text-brk-300 text-sm">لا توجد مبيعات بعد</div>
+                    <?php else: ?>
+                        <?php foreach($topProducts as $i => $tp): ?>
+                        <a href="index.php?page=admin_product_form&id=<?= $tp['id'] ?>" class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition border border-transparent hover:border-gray-100 no-underline">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0
+                                <?= $i == 0 ? 'bg-gld-500 text-white shadow-md' : ($i == 1 ? 'bg-gray-200 text-brk-600' : 'bg-gray-100 text-brk-400') ?>
+                            "><?= $i + 1 ?></div>
+                            <img src="<?= htmlspecialchars($tp['image_url'] ?? 'https://picsum.photos/60') ?>" class="w-9 h-9 rounded-lg object-cover border border-gray-100 shrink-0">
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-bold text-pri-900 truncate"><?= htmlspecialchars($tp['name']) ?></div>
+                                <div class="text-[10px] text-brk-400"><?= fmtD($tp['price']) ?> ر.س</div>
+                            </div>
+                            <div class="text-left shrink-0 bg-gray-50 px-2 py-1 rounded">
+                                <div class="text-xs font-black text-pri-700"><?= fmt($tp['sales_count']) ?></div>
+                                <div class="text-[8px] text-brk-300">مبيع</div>
+                            </div>
+                        </a>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- تنبيهات المخزون -->
+            <?php if($lowStock > 0): ?>
+            <div class="dash-section !border-red-200">
+                <h3 class="dash-section-title !text-red-600 bg-red-50/50"><i class="fas fa-exclamation-triangle"></i> تنبيهات المخزون (<?= $lowStock ?>)</h3>
+                <div class="space-y-1 p-2">
+                    <?php foreach($lowStockProducts as $lp): ?>
+                    <a href="index.php?page=admin_product_form&id=<?= $lp['id'] ?>" class="flex items-center gap-3 p-2 rounded-lg hover:bg-red-50 transition border border-transparent hover:border-red-100">
+                        <img src="<?= htmlspecialchars($lp['image_url'] ?? 'https://picsum.photos/80') ?>" class="w-8 h-8 rounded object-cover border border-gray-100 shrink-0">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-xs font-bold text-pri-900 truncate"><?= htmlspecialchars($lp['name']) ?></div>
+                        </div>
+                        <div class="text-center shrink-0">
+                            <div class="text-sm font-black <?= $lp['stock_quantity'] == 0 ? 'text-red-600' : 'text-orange-500' ?>"><?= $lp['stock_quantity'] ?></div>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- رسائل جديدة -->
+            <?php if($newMessages > 0): ?>
+            <div class="dash-section">
+                <h3 class="dash-section-title"><i class="fas fa-envelope-open-text text-blue-500"></i> رسائل جديدة <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full ml-auto"><?= $newMessages ?></span></h3>
+                <div class="space-y-2 p-3">
+                    <?php foreach($newMsgs as $m): ?>
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-blue-50/50 border border-blue-100">
+                        <div class="w-8 h-8 min-w-[32px] rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold mt-0.5"><?= mb_substr($m['full_name'], 0, 1) ?></div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-xs font-bold text-pri-900 truncate"><?= htmlspecialchars($m['full_name']) ?></div>
+                            <div class="text-[10px] text-pri-600 truncate"><?= htmlspecialchars($m['subject'] ?? 'بدون موضوع') ?></div>
+                            <div class="text-[9px] text-brk-300 mt-1" dir="ltr"><?= date('m/d H:i', strtotime($m['created_at'])) ?></div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                    <a href="index.php?page=admin_messages" class="block text-center text-xs font-bold text-blue-600 hover:text-blue-700 mt-3 py-2 bg-blue-50 rounded-xl transition">الرد على الرسائل ←</a>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- إحصائيات سريعة ومختصرة -->
+            <div class="dash-section">
+                <h3 class="dash-section-title"><i class="fas fa-bolt text-brk-500"></i> ملخص سريع</h3>
+                <div class="grid grid-cols-2 gap-2 p-3">
+                    <div class="bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
+                        <div class="text-lg font-black text-pri-700"><?= fmtD($avgOrder) ?></div>
+                        <div class="text-[10px] text-brk-400">متوسط الطلب (ر.س)</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
+                        <div class="text-lg font-black text-gld-600"><?= fmt($totalSales) ?></div>
+                        <div class="text-[10px] text-brk-400">إجمالي المبيعات</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
+                        <div class="text-lg font-black text-blue-600"><?= fmt($totalAudioListens) ?></div>
+                        <div class="text-[10px] text-brk-400">استماع صوتي</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
+                        <div class="text-lg font-black text-purple-600"><?= fmt($totalVideoViews) ?></div>
+                        <div class="text-[10px] text-brk-400">مشاهدة فيديو</div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

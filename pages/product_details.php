@@ -1,6 +1,6 @@
 <?php
 // مسار الملف: pages/product_details.php
-// تم التطوير: إضافة نظام المفضلة AJAX التفاعلي ونظام التقييمات والمراجعات
+// النسخة الكاملة — تفاصيل المنتج + الإضافة للسلة الموحدة + حجز موعد + التقييمات
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
@@ -94,30 +94,51 @@ if ($totalReviews > 0) {
                 <?php endif; ?>
             </div>
 
-            <div class="prose prose-sm text-brk-600 leading-loose mb-8">
-                <?= nl2br(htmlspecialchars($product['description'])) ?>
+            <!-- الوصف الشامل يعمل بصيغة HTML -->
+            <div class="prose prose-sm text-brk-600 leading-loose mb-8 custom-html-content">
+                <?= $product['description'] ?>
             </div>
 
             <div class="mt-auto">
                 <div class="flex items-center gap-2 mb-3">
-                    <span class="w-2 h-2 rounded-full <?= $product['stock_quantity'] > 0 ? 'bg-green-500' : 'bg-red-500' ?>"></span>
-                    <span class="text-sm font-bold <?= $product['stock_quantity'] > 0 ? 'text-green-700' : 'text-red-600' ?>">
-                        <?= $product['stock_quantity'] > 0 ? 'متوفر في المخزون ('.$product['stock_quantity'].')' : 'نفدت الكمية' ?>
+                    <span class="w-2 h-2 rounded-full <?= ($product['stock_quantity'] > 0 || $product['is_digital'] == 1) ? 'bg-green-500' : 'bg-red-500' ?>"></span>
+                    <span class="text-sm font-bold <?= ($product['stock_quantity'] > 0 || $product['is_digital'] == 1) ? 'text-green-700' : 'text-red-600' ?>">
+                        <?= ($product['stock_quantity'] > 0 || $product['is_digital'] == 1) ? 'متوفر' : 'نفدت الكمية' ?>
                     </span>
                 </div>
 
                 <div class="flex flex-wrap gap-4">
+                    <?php if ($product['is_digital'] == 0): ?>
                     <div class="qty bg-gray-50 border-2 border-border h-14 rounded-xl">
                         <button type="button" class="qty-b w-12 h-full text-xl" onclick="decQty()">-</button>
                         <input type="number" id="qtyInput" value="1" min="1" max="<?= $product['stock_quantity'] ?>" class="qty-v w-12 bg-transparent text-lg border-0 text-center" readonly>
                         <button type="button" class="qty-b w-12 h-full text-xl" onclick="incQty()">+</button>
                     </div>
+                    <?php else: ?>
+                        <!-- إخفاء اختيار الكمية للمنتجات الرقمية ليكون دائما 1 -->
+                        <input type="hidden" id="qtyInput" value="1">
+                    <?php endif; ?>
 
-                    <button onclick="addToCart(<?= $product['id'] ?>)" class="btn btn-primary flex-1 h-14 text-lg shadow-lg" <?= $product['stock_quantity'] <= 0 ? 'disabled style="opacity:0.5;cursor:not-allowed"' : '' ?>>
-                        <i class="fas fa-cart-plus"></i> <?= $product['stock_quantity'] > 0 ? 'أضف إلى السلة' : 'غير متوفر حالياً' ?>
+                    <button onclick="addToCart('product', <?= $product['id'] ?>)" class="btn btn-primary flex-1 h-14 text-lg shadow-lg" <?= ($product['stock_quantity'] <= 0 && $product['is_digital'] == 0) ? 'disabled style="opacity:0.5;cursor:not-allowed"' : '' ?>>
+                        <i class="fas fa-cart-plus"></i> <?= ($product['stock_quantity'] > 0 || $product['is_digital'] == 1) ? 'أضف إلى السلة' : 'غير متوفر حالياً' ?>
                     </button>
                 </div>
             </div>
+
+            <!-- بانر حجز الجلسة (أونلاين) -->
+            <div class="mt-8 bg-gradient-to-r from-pri-50 to-white border-2 border-pri-100 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm">
+                <div class="flex items-center gap-5">
+                    <div class="w-14 h-14 rounded-full bg-gld-100 text-gld-600 flex items-center justify-center text-2xl shrink-0"><i class="fas fa-calendar-check"></i></div>
+                    <div>
+                        <h3 class="text-lg font-black text-pri-900 font-amiri mb-1">احجز موعد لجلسة أونلاين</h3>
+                        <p class="text-xs text-brk-500">جلسة تشخيص ورقية مباشرة عبر الإنترنت.</p>
+                    </div>
+                </div>
+                <a href="index.php?page=book_appointment" class="btn btn-gold shrink-0 shadow-md hover:scale-105 transition-transform">
+                    احجز موعدك <i class="fas fa-arrow-left mr-2"></i>
+                </a>
+            </div>
+
         </div>
     </div>
 
@@ -126,7 +147,6 @@ if ($totalReviews > 0) {
         <h3 class="text-2xl font-black text-pri-900 font-amiri mb-6 border-b border-gray-100 pb-3"><i class="fas fa-comments text-gld-500 ml-2"></i>آراء العملاء</h3>
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            
             <!-- نموذج إضافة تقييم -->
             <div class="lg:col-span-1 bg-gray-50 p-6 rounded-2xl border border-gray-100 h-fit">
                 <h4 class="font-bold text-pri-900 mb-4 text-center">شاركنا رأيك بالمنتج</h4>
@@ -202,21 +222,31 @@ if ($totalReviews > 0) {
                     </div>
                 <?php endif; ?>
             </div>
-
         </div>
     </div>
 </div>
 
 <script>
 // --- سلة التسوق ---
-function incQty() { let i = document.getElementById('qtyInput'); if(i.value < <?= $product['stock_quantity'] ?>) i.value++; }
-function decQty() { let i = document.getElementById('qtyInput'); if(i.value > 1) i.value--; }
+function incQty() { 
+    let i = document.getElementById('qtyInput'); 
+    const maxStock = <?= $product['is_digital'] == 1 ? 1 : $product['stock_quantity'] ?>;
+    if(i && i.value < maxStock) i.value++; 
+}
+function decQty() { 
+    let i = document.getElementById('qtyInput'); 
+    if(i && i.value > 1) i.value--; 
+}
+function decQty() { let i = document.getElementById('qtyInput'); if(i && i.value > 1) i.value--; }
 
 function addToCart(productId) {
-    const qty = document.getElementById('qtyInput').value;
+    const qtyInput = document.getElementById('qtyInput');
+    const qty = qtyInput ? qtyInput.value : 1;
+    
     const formData = new FormData();
     formData.append('action', 'add');
-    formData.append('product_id', productId);
+    formData.append('item_type', 'product'); // تحديد النوع بشكل صريح
+    formData.append('item_id', productId);
     formData.append('quantity', qty);
 
     fetch('ajax/cart_action.php', { method: 'POST', body: formData })
@@ -224,9 +254,12 @@ function addToCart(productId) {
     .then(data => {
         if(data.success) {
             showToast(data.message, 'ok');
-            document.getElementById('cCount').innerText = data.total_items;
+            if(document.getElementById('cCount')) document.getElementById('cCount').innerText = data.total_items;
+        } else {
+            showToast(data.message, 'err');
         }
-    });
+    })
+    .catch(err => showToast('خطأ في الاتصال بالخادم', 'err'));
 }
 
 // --- المفضلة ---
