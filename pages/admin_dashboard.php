@@ -161,7 +161,7 @@ function fmtD($n) { return number_format($n, 2); }
     </div>
 
     <!-- ═══ بطاقات إحصائيات ثانوية ═══ -->
-    <div class="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-3 mb-8 afiu" style="animation-delay:.1s">
+    <div class="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-8 gap-3 mb-8 afiu" style="animation-delay:.1s">
         <a href="index.php?page=admin_audios" class="dash-mini-stat no-underline">
             <i class="fas fa-headphones text-gld-500"></i>
             <span class="font-black text-pri-900"><?= fmt($audiosCount) ?></span>
@@ -198,11 +198,6 @@ function fmtD($n) { return number_format($n, 2); }
             <i class="fas fa-ticket-alt text-green-600"></i>
             <span class="font-black text-pri-900"><?= fmt($couponsCount) ?></span>
             <span class="text-[10px] text-brk-400">كوبونات</span>
-        </a>
-        <a href="index.php?page=admin_tags" class="dash-mini-stat no-underline">
-            <i class="fas fa-tags text-gld-600"></i>
-            <span class="font-black text-pri-900"><?= fmt($tagsCount) ?></span>
-            <span class="text-[10px] text-brk-400">وسوم</span>
         </a>
         <a href="index.php?page=admin_media" class="dash-mini-stat no-underline">
             <i class="fas fa-photo-video text-pink-500"></i>

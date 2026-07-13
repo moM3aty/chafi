@@ -154,7 +154,7 @@ $user = $stmtUser->fetch();
                         <div class="absolute top-0 right-0 bg-pri-50 text-pri-700 px-4 py-1 rounded-bl-xl font-bold text-sm">🇦🇪 الإمارات العربية المتحدة</div>
                         <ul class="space-y-2 text-sm text-brk-600 mt-4">
                             <li><span class="font-bold text-pri-900">اسم البنك:</span> بنك الإمارات الإسلامي</li>
-                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span> أحمــد مبارك حمد</li>
+                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span>أحمــد ***** ***</li>
                             <li><span class="font-bold text-pri-900">رقم الحساب:</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('3578521802301'); showToast('تم نسخ رقم الحساب', 'ok')">3578521802301</span></li>
                             <li><span class="font-bold text-pri-900">الآيبان (IBAN):</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('AE520340003578521802301'); showToast('تم نسخ الآيبان', 'ok')">AE520340003578521802301</span></li>
                             <li><span class="font-bold text-pri-900">العملة:</span> الدرهم الإماراتي</li>
@@ -167,7 +167,7 @@ $user = $stmtUser->fetch();
                         <div class="absolute top-0 right-0 bg-pri-50 text-pri-700 px-4 py-1 rounded-bl-xl font-bold text-sm">🇸🇦 المملكة العربية السعودية</div>
                         <ul class="space-y-2 text-sm text-brk-600 mt-4">
                             <li><span class="font-bold text-pri-900">اسم البنك:</span> بنك الرياض</li>
-                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span> أحمــد مبارك حمد</li>
+                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span>أحمــد ***** ***</li>
                             <li><span class="font-bold text-pri-900">رقم الحساب:</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('1575973509940'); showToast('تم نسخ رقم الحساب', 'ok')">1575973509940</span></li>
                             <li><span class="font-bold text-pri-900">الآيبان (IBAN):</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('SA352000000157597350994'); showToast('تم نسخ الآيبان', 'ok')">SA352000000157597350994</span></li>
                             <li><span class="font-bold text-pri-900">العملة:</span> الريال السعودي</li>
@@ -179,7 +179,7 @@ $user = $stmtUser->fetch();
                         <div class="absolute top-0 right-0 bg-pri-50 text-pri-700 px-4 py-1 rounded-bl-xl font-bold text-sm">🇴🇲 سلطنة عمان</div>
                         <ul class="space-y-2 text-sm text-brk-600 mt-4">
                             <li><span class="font-bold text-pri-900">اسم البنك:</span> بنك صحار الدولي</li>
-                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span> أحمــد مبارك حمد</li>
+                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span>أحمــد ***** ***</li>
                             <li><span class="font-bold text-pri-900">رقم الحساب:</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('023010072025'); showToast('تم نسخ رقم الحساب', 'ok')">023010072025</span></li>
                             <li><span class="font-bold text-pri-900">الآيبان (IBAN):</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('OM340300000023010072025'); showToast('تم نسخ الآيبان', 'ok')">OM340300000023010072025</span></li>
                             <li><span class="font-bold text-pri-900">العملة:</span> الريال العماني</li>

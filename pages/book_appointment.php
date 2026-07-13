@@ -178,7 +178,7 @@ if (isset($_SESSION['user_id'])) {
                                 <div class="absolute top-0 right-0 bg-pri-50 text-pri-700 px-3 py-0.5 rounded-bl-xl font-bold text-xs">🇦🇪 الإمارات العربية المتحدة</div>
                                 <ul class="space-y-1.5 text-xs text-brk-600 mt-4">
                                     <li><span class="font-bold text-pri-900">اسم البنك:</span> بنك الإمارات الإسلامي</li>
-                                    <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span> أحمــد مبارك حمد</li>
+                                    <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span> أحمــد ***** ***</li>
                                     <li><span class="font-bold text-pri-900">رقم الحساب:</span> <span dir="ltr" class="font-mono bg-gray-50 px-1 py-0.5 rounded cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('3578521802301'); showToast('تم النسخ', 'ok')">3578521802301</span></li>
                                     <li><span class="font-bold text-pri-900">الآيبان (IBAN):</span> <span dir="ltr" class="font-mono bg-gray-50 px-1 py-0.5 rounded cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('AE520340003578521802301'); showToast('تم النسخ', 'ok')">AE520340003578521802301</span></li>
                                     <li><span class="font-bold text-pri-900">العملة:</span> الدرهم الإماراتي</li>
@@ -191,7 +191,7 @@ if (isset($_SESSION['user_id'])) {
                                 <div class="absolute top-0 right-0 bg-pri-50 text-pri-700 px-3 py-0.5 rounded-bl-xl font-bold text-xs">🇸🇦 المملكة العربية السعودية</div>
                                 <ul class="space-y-1.5 text-xs text-brk-600 mt-4">
                                     <li><span class="font-bold text-pri-900">اسم البنك:</span> بنك الرياض</li>
-                                    <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span> أحمــد مبارك حمد</li>
+                                    <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span>أحمــد ***** ***</li>
                                     <li><span class="font-bold text-pri-900">رقم الحساب:</span> <span dir="ltr" class="font-mono bg-gray-50 px-1 py-0.5 rounded cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('1575973509940'); showToast('تم النسخ', 'ok')">1575973509940</span></li>
                                     <li><span class="font-bold text-pri-900">الآيبان (IBAN):</span> <span dir="ltr" class="font-mono bg-gray-50 px-1 py-0.5 rounded cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('SA352000000157597350994'); showToast('تم النسخ', 'ok')">SA352000000157597350994</span></li>
                                     <li><span class="font-bold text-pri-900">العملة:</span> الريال السعودي</li>
@@ -203,7 +203,7 @@ if (isset($_SESSION['user_id'])) {
                                 <div class="absolute top-0 right-0 bg-pri-50 text-pri-700 px-3 py-0.5 rounded-bl-xl font-bold text-xs">🇴🇲 سلطنة عمان</div>
                                 <ul class="space-y-1.5 text-xs text-brk-600 mt-4">
                                     <li><span class="font-bold text-pri-900">اسم البنك:</span> بنك صحار الدولي</li>
-                                    <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span> أحمــد مبارك حمد</li>
+                                    <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span>أحمــد ***** ***</li>
                                     <li><span class="font-bold text-pri-900">رقم الحساب:</span> <span dir="ltr" class="font-mono bg-gray-50 px-1 py-0.5 rounded cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('023010072025'); showToast('تم النسخ', 'ok')">023010072025</span></li>
                                     <li><span class="font-bold text-pri-900">الآيبان (IBAN):</span> <span dir="ltr" class="font-mono bg-gray-50 px-1 py-0.5 rounded cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('OM340300000023010072025'); showToast('تم النسخ', 'ok')">OM340300000023010072025</span></li>
                                     <li><span class="font-bold text-pri-900">العملة:</span> الريال العماني</li>

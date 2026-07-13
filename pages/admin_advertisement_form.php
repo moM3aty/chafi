@@ -103,9 +103,7 @@ if ($isEdit) {
                     <label class="form-label">موقع العرض <span class="req">*</span></label>
                     <select name="position" class="form-select" required>
                         <option value="0" <?= ($item['position'] ?? 0) == 0 ? 'selected' : '' ?>>هيرو سلايدر (رئيسي)</option>
-                        <option value="1" <?= ($item['position'] ?? 0) == 1 ? 'selected' : '' ?>>بانر جانبي</option>
-                        <option value="2" <?= ($item['position'] ?? 0) == 2 ? 'selected' : '' ?>>بانر وسط الصفحة</option>
-                        <option value="3" <?= ($item['position'] ?? 0) == 3 ? 'selected' : '' ?>>نافذة منبثقة</option>
+
                     </select>
                 </div>
                 <div class="form-group !mb-0">

@@ -1,9 +1,9 @@
 <?php
 // مسار الملف: pages/home.php
-// الوظيفة: الواجهة الرئيسية الفاخرة للمتجر 
+// الوظيفة: الواجهة الرئيسية الفاخرة للمتجر مع تأثيرات Canvas التفاعلية
 
-// 1. جلب بيانات السلايدر النشطة
-$heroSliders = $pdo->query("SELECT * FROM advertisements WHERE is_active = 1 AND position = 0 ORDER BY display_order")->fetchAll();
+// 1. جلب بيانات السلايدر النشطة (يجب أن يكون موقع العرض = 0 في لوحة التحكم)
+$heroSliders = $pdo->query("SELECT * FROM advertisements WHERE is_active = 1 AND position = 0 ORDER BY display_order ASC, id DESC")->fetchAll();
 
 // 2. جلب الأقسام الرئيسية فقط التي تم تحديد إظهارها في الرئيسية
 $mainCategories = $pdo->query("
@@ -45,12 +45,16 @@ if (!function_exists('formatDurationHome')) {
     .lux-card:hover { border-color: #c8a020; box-shadow: 0 12px 30px rgba(200,160,32,0.08); transform: translateY(-4px); }
 </style>
 
-<section class="relative w-full h-[70vh] min-h-[460px] overflow-hidden rounded-b-[2rem] sm:rounded-b-[3.5rem] shadow-md" id="heroSlider">
+<section class="relative w-full h-[70vh] min-h-[460px] overflow-hidden rounded-b-[2rem] sm:rounded-b-[3.5rem] shadow-md bg-pri-900" id="heroSlider">
+    
+    <!-- الكانفاس التفاعلي للجسيمات المضيئة (Particles Canvas) -->
+    <canvas id="heroCanvas" class="absolute inset-0 w-full h-full z-[15] pointer-events-none"></canvas>
+
     <?php if (empty($heroSliders)): ?>
-        <div class="hero-slide on absolute inset-0 green-gradient flex items-center justify-center">
+        <div class="hero-slide on absolute inset-0 green-gradient flex items-center justify-center z-10">
             <div class="absolute inset-0 bg-black/35 z-10"></div>
             <div class="relative z-20 h-full flex flex-col justify-center items-center text-center max-w-4xl mx-auto px-6">
-                <span class="text-gld-300 text-xs sm:text-sm font-bold mb-4 tracking-widest uppercase bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-sm">نقاء، جودة، بركة</span>
+                <span class="text-gld-300 text-xs sm:text-sm font-bold mb-4 tracking-widest uppercase bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-sm shadow-lg">نقاء، جودة، بركة</span>
                 <h1 class="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.25] mb-6 font-amiri drop-shadow">تشافي للرقية الشرعية</h1>
                 <p class="text-white/85 text-sm sm:text-lg mb-8 max-w-2xl leading-relaxed">منتجات طبيعية 100% مقروء عليها آيات الشفاء والرقية الشرعية بأسلوب شرعي موثوق.</p>
                 <a href="index.php?page=products" class="bg-white text-pri-900 font-bold px-10 py-4 rounded-full hover:bg-gld-500 hover:text-white transition-all duration-300 shadow-lg hover:shadow-gld-500/20 transform hover:scale-105">تسوق الآن <i class="fas fa-arrow-left mr-1.5 text-xs"></i></a>
@@ -65,9 +69,9 @@ if (!function_exists('formatDurationHome')) {
                 <div class="relative z-20 h-full flex flex-col justify-center items-center text-center max-w-4xl mx-auto px-6">
                     <div class="slide-content transform translate-y-8 opacity-0 transition-all duration-1000 delay-200">
                         <?php if (!empty($slide['subtitle'])): ?>
-                            <span class="text-gld-400 text-xs sm:text-sm font-bold mb-4 inline-block tracking-widest uppercase bg-white/5 border border-white/10 px-4 py-1.5 rounded-full backdrop-blur-sm"><?= htmlspecialchars($slide['subtitle']) ?></span>
+                            <span class="text-gld-400 text-xs sm:text-sm font-bold mb-4 inline-block tracking-widest uppercase bg-white/5 border border-white/10 px-4 py-1.5 rounded-full backdrop-blur-sm shadow-md"><?= htmlspecialchars($slide['subtitle']) ?></span>
                         <?php endif; ?>
-                        <h1 class="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.25] mb-6 font-amiri drop-shadow-md">
+                        <h1 class="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.25] mb-6 font-amiri drop-shadow-lg">
                             <?= $slide['title'] ?>
                         </h1>
                         <?php if (!empty($slide['description'])): ?>
@@ -76,7 +80,7 @@ if (!function_exists('formatDurationHome')) {
                             </p>
                         <?php endif; ?>
                         <?php if (!empty($slide['link_url'])): ?>
-                            <a href="<?= htmlspecialchars($slide['link_url']) ?>" class="gold-gradient text-white font-bold px-10 py-4 rounded-full hover:shadow-[0_0_25px_rgba(212,175,55,0.4)] transition-all duration-300 inline-block transform hover:scale-105">
+                            <a href="<?= htmlspecialchars($slide['link_url']) ?>" target="<?= htmlspecialchars($slide['link_target']) ?>" class="gold-gradient text-white font-bold px-10 py-4 rounded-full hover:shadow-[0_0_25px_rgba(212,175,55,0.4)] transition-all duration-300 inline-block transform hover:scale-105">
                                 <?= htmlspecialchars($slide['link_text'] ?? 'تصفح الآن') ?>
                             </a>
                         <?php endif; ?>
@@ -93,6 +97,7 @@ if (!function_exists('formatDurationHome')) {
     <?php endif; ?>
 </section>
 
+<!-- مميزات الموقع -->
 <div class="max-w-7xl mx-auto px-4 -mt-10 relative z-40 mb-12 afiu">
     <div class="bg-white rounded-3xl p-5 sm:p-7 flex flex-wrap items-center justify-center gap-6 sm:gap-12 shadow-xl border border-[#f0eae1]">
         <div class="flex items-center gap-3.5">
@@ -347,6 +352,9 @@ if (!function_exists('formatDurationHome')) {
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // ════════════════════════════════════════════════════════════
+    // سكريبت التحكم بالسلايدر (Hero Slider)
+    // ════════════════════════════════════════════════════════════
     let slideIndex = 0;
     const slides = document.querySelectorAll('.hero-slide');
     const dotsContainer = document.getElementById('heroDots');
@@ -402,6 +410,80 @@ document.addEventListener('DOMContentLoaded', () => {
         if(firstContent) setTimeout(() => { firstContent.classList.remove('translate-y-8', 'opacity-0'); }, 100);
 
         slideInterval = setInterval(() => showSlide(slideIndex + 1), 6000);
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // سكريبت Canvas للجسيمات المضيئة (Glowing Particles)
+    // ════════════════════════════════════════════════════════════
+    const canvas = document.getElementById('heroCanvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height, particles;
+
+        function initCanvas() {
+            width = canvas.width = canvas.offsetWidth;
+            height = canvas.height = canvas.offsetHeight;
+            particles = [];
+            
+            // عدد الجسيمات يتناسب مع حجم الشاشة (كثافة متوسطة لعدم الإزعاج)
+            const particleCount = Math.min(Math.floor((width * height) / 12000), 80); 
+            
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 2.5 + 0.5,
+                    speedX: Math.random() * 0.5 - 0.25,
+                    speedY: Math.random() * 0.5 - 0.25,
+                    opacity: Math.random() * 0.5 + 0.1
+                });
+            }
+        }
+
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, width, height);
+            
+            particles.forEach((p, i) => {
+                p.x += p.speedX;
+                p.y += p.speedY;
+
+                // ارتداد ناعم من الحواف
+                if (p.x < 0 || p.x > width) p.speedX *= -1;
+                if (p.y < 0 || p.y > height) p.speedY *= -1;
+
+                // رسم الجسيم الدائري המضيء
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(212, 160, 23, ${p.opacity})`; // لون ذهبي
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = "rgba(212, 160, 23, 0.8)";
+                ctx.fill();
+
+                // رسم خطوط اتصال شفافة جداً بين الجسيمات القريبة
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dx = p.x - p2.x;
+                    const dy = p.y - p2.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 100) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(212, 160, 23, ${0.1 - dist / 1000})`; // ذهبي شفاف جداً
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            });
+
+            requestAnimationFrame(animateParticles);
+        }
+        
+        animateParticles();
     }
 });
 </script>
