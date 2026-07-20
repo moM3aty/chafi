@@ -16,6 +16,8 @@ $finalItems = [];
 
 // جلب وتجهيز كافة العناصر في السلة بناءً على نوعها
 foreach ($cartItems as $key => $item) {
+    if (!is_array($item)) continue;
+    
     $table = 'products';
     $nameCol = 'name';
     $priceCol = 'price';
@@ -23,6 +25,7 @@ foreach ($cartItems as $key => $item) {
     
     if ($item['type'] === 'audio') { $table = 'audios'; $nameCol = 'title'; $imgCol = 'thumbnail_url'; }
     elseif ($item['type'] === 'video') { $table = 'videos'; $nameCol = 'title'; $imgCol = 'thumbnail_url'; }
+    elseif ($item['type'] === 'book') { $table = 'books'; $nameCol = 'title'; $imgCol = 'thumbnail_url'; }
     elseif ($item['type'] === 'package') { $table = 'packages'; $priceCol = 'package_price'; }
     
     $query = "SELECT id, $nameCol as name, $priceCol as price, $imgCol as image";
@@ -120,8 +123,8 @@ $totalQty = array_sum(array_column($_SESSION['cart'], 'qty'));
             <div class="erp-card overflow-hidden">
                 <div class="p-4 space-y-3 max-h-[600px] overflow-y-auto no-sb" id="cartItemsContainer">
                     <?php foreach ($finalItems as $fi): 
-                        $typeLabel = ['product'=>'منتج', 'audio'=>'صوتي', 'video'=>'فيديو', 'package'=>'باقة'][$fi['type']];
-                        $typeIcon = ['product'=>'fa-box', 'audio'=>'fa-headphones', 'video'=>'fa-video', 'package'=>'fa-gift'][$fi['type']];
+                        $typeLabel = ['product'=>'منتج', 'audio'=>'صوتي', 'video'=>'فيديو', 'package'=>'باقة', 'book'=>'كتاب'][$fi['type']];
+                        $typeIcon = ['product'=>'fa-box', 'audio'=>'fa-headphones', 'video'=>'fa-video', 'package'=>'fa-gift', 'book'=>'fa-book'][$fi['type']];
                     ?>
                         <div class="p-4 flex gap-4 border border-gray-100 rounded-2xl hover:border-pri-200 transition-colors group" id="cart-item-<?= $fi['cart_key'] ?>">
                             <div class="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-50 border border-gray-100 relative">
@@ -132,17 +135,15 @@ $totalQty = array_sum(array_column($_SESSION['cart'], 'qty'));
                                 <div class="flex justify-between items-start gap-2">
                                     <div>
                                         <h4 class="font-bold text-pri-900 text-sm truncate max-w-[280px]"><?= htmlspecialchars($fi['name']) ?></h4>
-                                        <!-- تصحيح العملة -->
                                         <div class="text-pri-700 font-black text-sm mt-1"><?= number_format($fi['price'], 2) ?> ر.س</div>
                                     </div>
                                     <div class="text-left shrink-0">
                                         <div class="text-xs text-brk-400 mb-0.5">الإجمالي</div>
-                                        <!-- تصحيح العملة -->
                                         <div class="font-black text-pri-900" id="line-total-<?= $fi['cart_key'] ?>"><?= number_format($fi['lineTotal'], 2) ?> ر.س</div>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2 mt-2">
-                                    <?php if ($fi['type'] === 'product'): // تحديد الكمية فقط للمنتجات الملموسة ?>
+                                    <?php if ($fi['type'] === 'product'): ?>
                                     <div class="qty bg-gray-50 border border-gray-200 rounded-xl h-10 flex">
                                         <button type="button" class="qty-b" onclick="updateCartQty('<?= $fi['type'] ?>', <?= $fi['id'] ?>, -1, <?= $fi['stock'] ?>)">−</button>
                                         <input type="number" class="qty-v" id="qty-<?= $fi['cart_key'] ?>" value="<?= $fi['qty'] ?>" readonly>
@@ -176,7 +177,6 @@ $totalQty = array_sum(array_column($_SESSION['cart'], 'qty'));
                 </div>
 
                 <div class="space-y-3 text-sm text-brk-500 mb-5">
-                    <!-- تصحيح العملة -->
                     <div class="flex justify-between py-2 border-b border-gray-50">
                         <span>المجموع الفرعي</span>
                         <span class="font-bold text-pri-700" id="summarySubTotal"><?= number_format($subTotal, 2) ?> ر.س</span>
@@ -184,7 +184,6 @@ $totalQty = array_sum(array_column($_SESSION['cart'], 'qty'));
                     <?php if ($hasPhysicalItems): ?>
                     <div class="flex justify-between py-2 border-b border-gray-50">
                         <span>شحن المنتجات</span>
-                        <!-- تصحيح العملة -->
                         <span class="font-bold text-green-600" id="summaryShipping"><?= $shippingCost == 0 ? 'مجاني' : number_format($shippingCost, 2) . ' ر.س' ?></span>
                     </div>
                     <?php endif; ?>
@@ -194,13 +193,11 @@ $totalQty = array_sum(array_column($_SESSION['cart'], 'qty'));
                             <i class="fas fa-tag text-xs"></i> الخصم 
                             <button type="button" onclick="removeCoupon()" class="text-red-500 hover:text-red-700 text-[10px] mr-2"><i class="fas fa-times"></i> إزالة</button>
                         </div>
-                        <!-- تصحيح العملة -->
                         <span class="font-black text-pri-700" id="summaryDiscount">- <?= number_format($couponDiscount, 2) ?> ر.س</span>
                     </div>
 
                     <div class="flex justify-between py-3 border-b-2 border-gld-300 border-dashed pt-3">
                         <span class="font-bold text-pri-900 text-base">الإجمالي المستحق</span>
-                        <!-- تصحيح العملة بجمعها في span واحد -->
                         <span class="font-black text-pri-700 text-xl" id="summaryTotal"><?= number_format($total, 2) ?> ر.س</span>
                     </div>
                 </div>

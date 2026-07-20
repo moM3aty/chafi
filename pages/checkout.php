@@ -1,8 +1,6 @@
 <?php
 // مسار الملف: pages/checkout.php
-// المكان: داخل مجلد pages
 
-// التحقق من تسجيل الدخول
 if (!isset($_SESSION['user_id'])) {
     echo "<div class='max-w-3xl mx-auto px-4 py-20 text-center afiu'>
             <div class='w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl'><i class='fas fa-lock'></i></div>
@@ -19,17 +17,17 @@ if (empty($cartItems)) {
     exit;
 }
 
-// 1. حساب السلة (النظام الذكي الشامل)
 $subTotal = 0;
 $hasPhysicalItems = false;
 $finalItems = [];
 
 foreach ($cartItems as $key => $item) {
-    if (!is_array($item)) continue; // تخطي أي بيانات تالفة
+    if (!is_array($item)) continue;
     
     $table = 'products'; $nameCol = 'name'; $priceCol = 'price'; $imgCol = 'image_url';
     if ($item['type'] === 'audio') { $table = 'audios'; $nameCol = 'title'; $imgCol = 'thumbnail_url'; }
     elseif ($item['type'] === 'video') { $table = 'videos'; $nameCol = 'title'; $imgCol = 'thumbnail_url'; }
+    elseif ($item['type'] === 'book') { $table = 'books'; $nameCol = 'title'; $imgCol = 'thumbnail_url'; }
     elseif ($item['type'] === 'package') { $table = 'packages'; $priceCol = 'package_price'; }
     
     $query = "SELECT id, $nameCol as name, $priceCol as price, $imgCol as image";
@@ -69,7 +67,6 @@ $shippingCost = ($hasPhysicalItems && $subTotal > 0 && $subTotal < 200) ? 25 : 0
 $couponDiscount = 0;
 $couponCode = isset($_SESSION['coupon_code']) ? $_SESSION['coupon_code'] : '';
 
-// 2. التحقق من الكوبون مرة أخرى لحماية الطلب
 if (!empty($couponCode)) {
     $couponStmt = $pdo->prepare("SELECT * FROM coupons WHERE code = ? AND is_active = 1");
     $couponStmt->execute([$couponCode]);
@@ -89,12 +86,10 @@ if (!empty($couponCode)) {
 
 $total = max(0, $subTotal + $shippingCost - $couponDiscount);
 
-// 3. جلب العنوان الافتراضي للمستخدم
 $stmtUserAddr = $pdo->prepare("SELECT * FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC LIMIT 1");
 $stmtUserAddr->execute([$_SESSION['user_id']]);
 $address = $stmtUserAddr->fetch();
 
-// جلب المستخدم الأساسي للاحتياط
 $stmtUser = $pdo->prepare("SELECT full_name, phone FROM users WHERE id = ?");
 $stmtUser->execute([$_SESSION['user_id']]);
 $user = $stmtUser->fetch();
@@ -154,7 +149,7 @@ $user = $stmtUser->fetch();
                         <div class="absolute top-0 right-0 bg-pri-50 text-pri-700 px-4 py-1 rounded-bl-xl font-bold text-sm">🇦🇪 الإمارات العربية المتحدة</div>
                         <ul class="space-y-2 text-sm text-brk-600 mt-4">
                             <li><span class="font-bold text-pri-900">اسم البنك:</span> بنك الإمارات الإسلامي</li>
-                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span>أحمــد ***** ***</li>
+                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span> أحمــد ***** ***</li>
                             <li><span class="font-bold text-pri-900">رقم الحساب:</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('3578521802301'); showToast('تم نسخ رقم الحساب', 'ok')">3578521802301</span></li>
                             <li><span class="font-bold text-pri-900">الآيبان (IBAN):</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('AE520340003578521802301'); showToast('تم نسخ الآيبان', 'ok')">AE520340003578521802301</span></li>
                             <li><span class="font-bold text-pri-900">العملة:</span> الدرهم الإماراتي</li>
@@ -167,7 +162,7 @@ $user = $stmtUser->fetch();
                         <div class="absolute top-0 right-0 bg-pri-50 text-pri-700 px-4 py-1 rounded-bl-xl font-bold text-sm">🇸🇦 المملكة العربية السعودية</div>
                         <ul class="space-y-2 text-sm text-brk-600 mt-4">
                             <li><span class="font-bold text-pri-900">اسم البنك:</span> بنك الرياض</li>
-                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span>أحمــد ***** ***</li>
+                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span> أحمــد ***** ***</li>
                             <li><span class="font-bold text-pri-900">رقم الحساب:</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('1575973509940'); showToast('تم نسخ رقم الحساب', 'ok')">1575973509940</span></li>
                             <li><span class="font-bold text-pri-900">الآيبان (IBAN):</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('SA352000000157597350994'); showToast('تم نسخ الآيبان', 'ok')">SA352000000157597350994</span></li>
                             <li><span class="font-bold text-pri-900">العملة:</span> الريال السعودي</li>
@@ -179,7 +174,7 @@ $user = $stmtUser->fetch();
                         <div class="absolute top-0 right-0 bg-pri-50 text-pri-700 px-4 py-1 rounded-bl-xl font-bold text-sm">🇴🇲 سلطنة عمان</div>
                         <ul class="space-y-2 text-sm text-brk-600 mt-4">
                             <li><span class="font-bold text-pri-900">اسم البنك:</span> بنك صحار الدولي</li>
-                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span>أحمــد ***** ***</li>
+                            <li><span class="font-bold text-pri-900">اسم صاحب الحساب:</span> أحمــد ***** ***</li>
                             <li><span class="font-bold text-pri-900">رقم الحساب:</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('023010072025'); showToast('تم نسخ رقم الحساب', 'ok')">023010072025</span></li>
                             <li><span class="font-bold text-pri-900">الآيبان (IBAN):</span> <span dir="ltr" class="font-mono bg-white px-2 py-0.5 rounded border border-gray-100 cursor-pointer hover:bg-pri-50" onclick="navigator.clipboard.writeText('OM340300000023010072025'); showToast('تم نسخ الآيبان', 'ok')">OM340300000023010072025</span></li>
                             <li><span class="font-bold text-pri-900">العملة:</span> الريال العماني</li>
@@ -207,7 +202,7 @@ $user = $stmtUser->fetch();
         <!-- ملخص الطلب النهائي -->
         <div>
             <div class="erp-card p-6 sticky top-24 bg-gray-50/50">
-                <h3 class="text-lg font-black text-pri-900 mb-5 border-b border-gray-200 pb-3">الفاتورة النهائية</h3>
+                <h3 class="text-lg font-black text-pri-900 mb-5 border-b border-gray-200 pb-3">الفاتورة النهائيـــة</h3>
                 
                 <div class="space-y-4 mb-6 max-h-48 overflow-y-auto pr-2 no-sb">
                     <?php foreach ($finalItems as $item): ?>
@@ -217,7 +212,6 @@ $user = $stmtUser->fetch();
                                 <div class="text-xs font-bold text-pri-900 truncate"><?= htmlspecialchars($item['name']) ?></div>
                                 <div class="text-[10px] text-brk-400">× <?= $item['qty'] ?></div>
                             </div>
-                            <!-- تصحيح العملة -->
                             <div class="font-bold text-pri-700 text-xs shrink-0"><?= number_format($item['price'] * $item['qty'], 2) ?> ر.س</div>
                         </div>
                     <?php endforeach; ?>
@@ -239,7 +233,6 @@ $user = $stmtUser->fetch();
                 <div class="border-t border-gray-200 pt-4 mb-6">
                     <div class="flex justify-between items-center">
                         <span class="text-base font-black text-pri-900">الإجمالي المستحق</span>
-                        <!-- تصحيح العملة بجمعها في span واحد -->
                         <span class="text-2xl font-black text-pri-700"><?= number_format($total, 2) ?> ر.س</span>
                     </div>
                 </div>

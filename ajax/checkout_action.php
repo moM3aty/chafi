@@ -1,7 +1,5 @@
 <?php
 // مسار الملف: ajax/checkout_action.php
-// الوظيفة: معالجة الطلب النهائي مع احتساب الكوبونات ورفع الإيصال البنكي
-
 session_start();
 require_once '../config.php';
 
@@ -16,11 +14,11 @@ try {
     $hasPhysicalItems = false;
     $finalItems = [];
     
-    // حساب المجاميع من الجداول المختلفة لحماية البيانات
     foreach ($cartItems as $key => $item) {
         $table = 'products'; $nameCol = 'name'; $priceCol = 'price'; $imgCol = 'image_url';
         if ($item['type'] === 'audio') { $table = 'audios'; $nameCol = 'title'; $imgCol = 'thumbnail_url'; }
         elseif ($item['type'] === 'video') { $table = 'videos'; $nameCol = 'title'; $imgCol = 'thumbnail_url'; }
+        elseif ($item['type'] === 'book') { $table = 'books'; $nameCol = 'title'; $imgCol = 'thumbnail_url'; }
         elseif ($item['type'] === 'package') { $table = 'packages'; $priceCol = 'package_price'; }
         
         $query = "SELECT id, $nameCol as name, $priceCol as price, $imgCol as image";
@@ -53,7 +51,6 @@ try {
 
     $shippingCost = ($hasPhysicalItems && $subTotal > 0 && $subTotal < 200) ? 25 : 0;
     
-    // التحقق من الكوبون
     $couponId = null;
     $discountAmount = 0;
     if (isset($_SESSION['coupon_code']) && $subTotal > 0) {
@@ -84,29 +81,21 @@ try {
     $paymentMethod = $_POST['payment_method'] ?? 'BankTransfer';
     $orderNumber = "ORD-" . date("ymd") . "-" . strtoupper(substr(uniqid(), -4));
 
-    // --- معالجة رفع صورة إيصال التحويل ---
     $receiptUrl = '';
     if (isset($_FILES['transfer_receipt']) && $_FILES['transfer_receipt']['error'] == 0) {
         $uploadDir = '../assets/uploads/receipts/';
         if (!is_dir($uploadDir)) { mkdir($uploadDir, 0777, true); }
-        
-        // تنظيف اسم الملف
         $fileName = time() . '_' . preg_replace('/[^a-zA-Z0-9.\-_]/', '', basename($_FILES['transfer_receipt']['name']));
         $targetFile = $uploadDir . $fileName;
-        
         if (move_uploaded_file($_FILES['transfer_receipt']['tmp_name'], $targetFile)) {
-            // حفظ المسار النسبي لقاعدة البيانات
             $receiptUrl = 'assets/uploads/receipts/' . $fileName;
         } else {
-            die("<script>alert('حدث خطأ أثناء رفع صورة الإيصال. يرجى المحاولة مرة أخرى.'); history.back();</script>");
+            die("<script>alert('حدث خطأ أثناء رفع صورة الإيصال.'); history.back();</script>");
         }
     } else {
-        die("<script>alert('صورة إيصال التحويل البنكي مطلوبة لإتمام الطلب.'); history.back();</script>");
+        die("<script>alert('صورة إيصال التحويل مطلوبة.'); history.back();</script>");
     }
-    // --------------------------------------
 
-    // إنشاء الطلب الرئيسي (مع حفظ مسار الإيصال)
-    // لاحظ: إذا لم يكن حقل transfer_receipt_url موجوداً في الـ Database، سيقوم setup_db بإنشائه لاحقاً بفضل الحماية التي أضفناها، ولكننا نرسله هنا.
     $stmtOrder = $pdo->prepare("
         INSERT INTO orders 
         (order_number, user_id, sub_total, discount_amount, coupon_id, shipping_cost, total_amount, shipping_full_name, shipping_phone, shipping_city, shipping_address, payment_method, transfer_receipt_url, status) 
@@ -119,27 +108,27 @@ try {
         $pdo->prepare("INSERT INTO coupon_usage (coupon_id, user_id, order_id, discount_applied) VALUES (?, ?, ?, ?)")->execute([$couponId, $_SESSION['user_id'], $orderId, $discountAmount]);
     }
 
-    // حفظ عناصر الطلب وتحديث المخزون والإحصائيات
     $stmtItem = $pdo->prepare("INSERT INTO order_items (order_id, item_type, item_id, item_name, item_image, unit_price, quantity, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
     $stmtUpdateStock = $pdo->prepare("UPDATE products SET stock_quantity = stock_quantity - ?, sales_count = sales_count + ? WHERE id = ?");
     $stmtUpdateAudioSales = $pdo->prepare("UPDATE audios SET download_count = download_count + ? WHERE id = ?");
     $stmtUpdateVideoSales = $pdo->prepare("UPDATE videos SET view_count = view_count + ? WHERE id = ?");
+    $stmtUpdateBookSales = $pdo->prepare("UPDATE books SET download_count = download_count + ? WHERE id = ?");
     
     foreach ($finalItems as $fi) {
         $pTotal = $fi['price'] * $fi['qty'];
         $stmtItem->execute([$orderId, $fi['type'], $fi['id'], $fi['name'], $fi['image'], $fi['price'], $fi['qty'], $pTotal]);
         
-        // تحديث المخزون والإحصائيات بناءً على النوع
         if ($fi['type'] === 'product') {
             $stmtUpdateStock->execute([$fi['qty'], $fi['qty'], $fi['id']]);
         } elseif ($fi['type'] === 'audio') {
             $stmtUpdateAudioSales->execute([$fi['qty'], $fi['id']]);
         } elseif ($fi['type'] === 'video') {
             $stmtUpdateVideoSales->execute([$fi['qty'], $fi['id']]);
+        } elseif ($fi['type'] === 'book') {
+            $stmtUpdateBookSales->execute([$fi['qty'], $fi['id']]);
         }
     }
 
-    // تفريغ السلة والكوبون بعد إتمام الطلب بنجاح
     unset($_SESSION['cart']);
     unset($_SESSION['coupon_code']);
     
@@ -147,6 +136,6 @@ try {
     exit;
 
 } catch (PDOException $e) {
-    die("حدث خطأ في قاعدة البيانات أثناء معالجة الطلب: " . $e->getMessage());
+    die("حدث خطأ في قاعدة البيانات أثناء معالجة الطلب.");
 }
 ?>

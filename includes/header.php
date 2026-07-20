@@ -1,20 +1,15 @@
 <?php
 // مسار الملف: includes/header.php
-
-// 1. جلب الأقسام الرئيسية التي تم تفعيل "إظهار في القائمة" لها
 $stmt = $pdo->query("SELECT * FROM categories WHERE is_active = 1 AND show_in_menu = 1 AND parent_id IS NULL ORDER BY sort_order ASC");
 $navCategories = $stmt->fetchAll();
 
-// 2. جلب الصفحات التعريفية لظهور "عن الموقع"
 $cmsStmt = $pdo->query("SELECT * FROM cms_pages WHERE is_active = 1 ORDER BY sort_order ASC");
 $navPages = $cmsStmt->fetchAll();
 
 $isAdmin = isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['Admin', 'SuperAdmin']);
 
-// 3. إعدادات العملة الحالية (الافتراضي SAR)
 $currentCurrency = $_SESSION['currency'] ?? 'SAR';
 
-// قائمة العملات مع الرموز ومعامل الضرب الافتراضي مقابل الريال السعودي
 $currencies = [
     'SAR' => ['symbol' => 'ر.س', 'rate' => 1.0, 'flag' => '🇸🇦', 'name' => 'ريال سعودي'],
     'AED' => ['symbol' => 'د.إ', 'rate' => 0.98, 'flag' => '🇦🇪', 'name' => 'درهم إماراتي'],
@@ -66,8 +61,6 @@ $activeCurrObj = $currencies[$currentCurrency];
         }
     </script>
     <link rel="stylesheet" href="assets/css/site.css" />
-    
-    <!-- تمرير إعدادات العملة لملف الجافاسكريبت -->
     <script>
         window.ChafiCurrency = {
             code: '<?= $currentCurrency ?>',
@@ -78,7 +71,6 @@ $activeCurrObj = $currencies[$currentCurrency];
 </head>
 <body class="flex flex-col min-h-screen">
     <div class="islamic-bg"></div>
-
     <header class="main-header" id="mainHeader">
         <div class="top-strip relative z-50">
             <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between text-white/70 text-xs sm:text-sm font-medium">
@@ -88,17 +80,13 @@ $activeCurrObj = $currencies[$currentCurrency];
                         <i class="fas fa-headset text-gld-400"></i> تواصل معنا
                     </a>
                 </div>
-                
                 <div class="flex items-center gap-4">
-                    <!-- قائمة العملات المنسدلة -->
                     <div class="relative group">
                         <button class="flex items-center gap-1.5 hover:text-white transition cursor-pointer bg-white/5 border border-white/10 px-3 py-1 rounded-full backdrop-blur-sm">
                             <span class="text-base"><?= $activeCurrObj['flag'] ?></span> 
                             <span class="font-bold font-mono" dir="ltr"><?= $currentCurrency ?></span>
                             <i class="fas fa-chevron-down text-[9px] opacity-70"></i>
                         </button>
-                        
-                        <!-- القائمة المخفية (تمت إضافة شريط تمرير للعملات الكثيرة) -->
                         <div class="absolute left-0 top-full mt-1 w-44 max-h-80 overflow-y-auto no-sb bg-white rounded-xl shadow-xl border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-left z-[9999]">
                             <div class="px-3 pb-2 mb-2 border-b border-gray-50 text-[10px] text-gray-400 font-bold">اختر عملة العرض</div>
                             <?php foreach($currencies as $code => $c): ?>
@@ -161,8 +149,12 @@ $activeCurrObj = $currencies[$currentCurrency];
         </nav>
         
         <div class="border-t border-white/10 bg-black/10 backdrop-blur-md relative z-30">
-            <div class="max-w-7xl mx-auto px-4 flex items-center justify-start md:justify-center gap-3 overflow-x-auto py-3 text-sm no-sb">
+            <div class="max-w-7xl mx-auto px-4 flex items-center justify-start md:justify-center overflow-x-auto py-3 text-sm no-sb">
                 
+                <a href="index.php?page=books" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition whitespace-nowrap text-xs font-bold no-underline">
+                    <i class="fas fa-book-open text-gld-400 text-[11px]"></i> المكتبة والكتب
+                </a>
+
                 <?php foreach($navPages as $navPage): ?>
                     <a href="index.php?page=cms&slug=<?= htmlspecialchars($navPage['slug']) ?>" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition whitespace-nowrap text-xs font-bold no-underline">
                         <i class="fas fa-info-circle text-gld-400 text-[11px]"></i> <?= htmlspecialchars($navPage['title']) ?>
@@ -182,7 +174,6 @@ $activeCurrObj = $currencies[$currentCurrency];
     <main class="flex-1 relative z-10 w-full" id="app">
 
     <script>
-    // تغيير العملة وإعادة تحميل الصفحة
     function changeCurrency(code) {
         const fd = new FormData();
         fd.append('currency', code);
@@ -197,43 +188,32 @@ $activeCurrObj = $currencies[$currentCurrency];
             });
     }
 
-    // سكريبت ذكي للبحث عن أسعار "ر.س" في الواجهة وتحويلها ديناميكياً 
-    // إذا كانت العملة الحالية ليست ريال سعودي (SAR)
     document.addEventListener('DOMContentLoaded', () => {
-        if (window.ChafiCurrency.code === 'SAR') return; // لا حاجة للتحويل
+        if (window.ChafiCurrency.code === 'SAR') return; 
 
         const rate = window.ChafiCurrency.rate;
         const symbol = window.ChafiCurrency.symbol;
 
-        // دالة تمسح النصوص وتبحث عن "ر.س" وتقوم بتحويل الرقم الذي يسبقها
         function convertPricesInDOM(node) {
-            if (node.nodeType === 3) { // Text node
+            if (node.nodeType === 3) { 
                 const text = node.nodeValue;
-                // Regex يبحث عن أرقام (قد تحتوي على فواصل للآلاف) متبوعة بـ ر.س
                 const regex = /([\d,]+(?:\.\d+)?)\s*ر\.س/g;
                 if (regex.test(text)) {
                     node.nodeValue = text.replace(regex, (match, numStr) => {
-                        // تنظيف الرقم من الفواصل للتحويل
                         const cleanNum = parseFloat(numStr.replace(/,/g, ''));
                         if (isNaN(cleanNum)) return match;
-                        
-                        // التحويل والتقريب لمنزلتين
                         const converted = (cleanNum * rate).toFixed(2);
-                        // إضافة فواصل الآلاف
                         const formatted = converted.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                        
                         return formatted + ' ' + symbol;
                     });
                 }
             } else if (node.nodeType === 1 && node.nodeName !== 'SCRIPT' && node.nodeName !== 'STYLE') {
-                // استمرار البحث في أبناء العنصر
                 for (let i = 0; i < node.childNodes.length; i++) {
                     convertPricesInDOM(node.childNodes[i]);
                 }
             }
         }
 
-        // بدء التحويل في العنصر الرئيسي للصفحة
         const appBody = document.getElementById('app');
         if (appBody) {
             convertPricesInDOM(appBody);

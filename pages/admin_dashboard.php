@@ -1,6 +1,6 @@
 <?php
 // مسار الملف: pages/admin_dashboard.php
-// النسخة الشاملة والمطورة — سهلة الاستخدام ومربوطة بكل النظام (شاملة جميع الشارتات)
+// النسخة الشاملة والمطورة — سهلة الاستخدام ومربوطة بكل النظام (شاملة جميع الشارتات والكتب)
 
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_role'], ['Admin', 'SuperAdmin'])) {
     echo "<script>window.location.href='index.php';</script>"; exit;
@@ -14,6 +14,10 @@ $activeProds     = $pdo->query("SELECT COUNT(*) FROM products WHERE is_active = 
 $audiosCount     = $pdo->query("SELECT COUNT(*) FROM audios")->fetchColumn();
 $videosCount     = $pdo->query("SELECT COUNT(*) FROM videos")->fetchColumn();
 $packagesCount   = $pdo->query("SELECT COUNT(*) FROM packages")->fetchColumn();
+
+// جلب عدد الكتب (مع حماية في حال لم يتم إنشاء الجدول بعد)
+try { $booksCount = $pdo->query("SELECT COUNT(*) FROM books")->fetchColumn(); } catch(Exception $e) { $booksCount = 0; }
+
 $ordersCount     = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
 $pendingOrders   = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'Pending'")->fetchColumn();
 $processingOrders= $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'Processing'")->fetchColumn();
@@ -161,7 +165,12 @@ function fmtD($n) { return number_format($n, 2); }
     </div>
 
     <!-- ═══ بطاقات إحصائيات ثانوية ═══ -->
-    <div class="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-8 gap-3 mb-8 afiu" style="animation-delay:.1s">
+    <div class="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-3 mb-8 afiu" style="animation-delay:.1s">
+        <a href="index.php?page=admin_books" class="dash-mini-stat no-underline">
+            <i class="fas fa-book-open text-gld-500"></i>
+            <span class="font-black text-pri-900"><?= fmt($booksCount) ?></span>
+            <span class="text-[10px] text-brk-400">كتب وملفات</span>
+        </a>
         <a href="index.php?page=admin_audios" class="dash-mini-stat no-underline">
             <i class="fas fa-headphones text-gld-500"></i>
             <span class="font-black text-pri-900"><?= fmt($audiosCount) ?></span>
@@ -226,6 +235,8 @@ function fmtD($n) { return number_format($n, 2); }
                     <a href="index.php?page=admin_video_form" class="dash-link dash-link-add"><i class="fas fa-plus-circle text-brk-400"></i><span>فيديو جديد</span></a>
                     <a href="index.php?page=admin_packages" class="dash-link"><i class="fas fa-gift text-pri-600"></i><span>الباقات</span><span class="dash-link-count"><?= fmt($packagesCount) ?></span></a>
                     <a href="index.php?page=admin_package_form" class="dash-link dash-link-add"><i class="fas fa-plus-circle text-pri-400"></i><span>باقة جديدة</span></a>
+                    <a href="index.php?page=admin_books" class="dash-link"><i class="fas fa-book-open text-gld-600"></i><span>المكتبة والكتب</span><span class="dash-link-count"><?= fmt($booksCount) ?></span></a>
+                    <a href="index.php?page=admin_book_form" class="dash-link dash-link-add"><i class="fas fa-plus-circle text-gld-400"></i><span>كتاب جديد</span></a>
                 </div>
             </div>
 

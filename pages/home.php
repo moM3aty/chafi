@@ -1,31 +1,13 @@
 <?php
 // مسار الملف: pages/home.php
-// الوظيفة: الواجهة الرئيسية الفاخرة للمتجر مع تأثيرات Canvas التفاعلية
-
-// 1. جلب بيانات السلايدر النشطة (يجب أن يكون موقع العرض = 0 في لوحة التحكم)
 $heroSliders = $pdo->query("SELECT * FROM advertisements WHERE is_active = 1 AND position = 0 ORDER BY display_order ASC, id DESC")->fetchAll();
 
-// 2. جلب الأقسام الرئيسية فقط التي تم تحديد إظهارها في الرئيسية
-$mainCategories = $pdo->query("
-    SELECT * FROM categories 
-    WHERE is_active = 1 AND parent_id IS NULL AND show_on_home = 1
-    ORDER BY sort_order
-")->fetchAll();
+$mainCategories = $pdo->query("SELECT * FROM categories WHERE is_active = 1 AND parent_id IS NULL AND show_on_home = 1 ORDER BY sort_order")->fetchAll();
 
-// 3. جلب أبرز المنتجات الملموسة المميزة (التي ليست منتجات رقمية)
-$featuredProducts = $pdo->query("
-    SELECT p.*, c.name as category_name 
-    FROM products p 
-    LEFT JOIN categories c ON p.category_id = c.id 
-    WHERE p.is_active = 1 AND p.is_featured = 1 AND p.is_digital = 0
-    ORDER BY p.created_at DESC LIMIT 8
-")->fetchAll();
+$featuredProducts = $pdo->query("SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_active = 1 AND p.is_featured = 1 AND p.is_digital = 0 ORDER BY p.created_at DESC LIMIT 8")->fetchAll();
 
-// 4. جلب الصوتيات والفيديوهات المميزة للعرض في المكتبة الرقمية بالرئيسية
 $featuredAudios = $pdo->query("SELECT a.*, c.name as cat_name FROM audios a LEFT JOIN categories c ON a.category_id = c.id WHERE a.is_active = 1 AND a.is_featured = 1 ORDER BY a.listen_count DESC LIMIT 4")->fetchAll();
 $featuredVideos = $pdo->query("SELECT v.*, c.name as cat_name FROM videos v LEFT JOIN categories c ON v.category_id = c.id WHERE v.is_active = 1 AND v.is_featured = 1 ORDER BY v.view_count DESC LIMIT 3")->fetchAll();
-
-// 5. الباقات والعروض المميزة
 $featuredPackages = $pdo->query("SELECT * FROM packages WHERE is_active = 1 AND is_featured = 1 ORDER BY created_at DESC LIMIT 3")->fetchAll();
 
 if (!function_exists('formatDurationHome')) {
@@ -41,13 +23,11 @@ if (!function_exists('formatDurationHome')) {
     .lux-gradient { background: linear-gradient(180deg, #fdfbf7 0%, #ffffff 100%); }
     .gold-gradient { background: linear-gradient(135deg, #d4a017, #aa7c11); }
     .green-gradient { background: linear-gradient(135deg, #1b4332, #0e2f18); }
-    .lux-card { border: 1px solid #f0eae1; box-shadow: 0 4px 20px rgba(0,0,0,0.015); transition: all 0.3s cubic-bezier(.4,0,.2,1); }
-    .lux-card:hover { border-color: #c8a020; box-shadow: 0 12px 30px rgba(200,160,32,0.08); transform: translateY(-4px); }
 </style>
 
 <section class="relative w-full h-[70vh] min-h-[460px] overflow-hidden rounded-b-[2rem] sm:rounded-b-[3.5rem] shadow-md bg-pri-900" id="heroSlider">
     
-    <!-- الكانفاس التفاعلي للجسيمات المضيئة (Particles Canvas) -->
+    <!-- الكانفاس التفاعلي للجسيمات المضيئة -->
     <canvas id="heroCanvas" class="absolute inset-0 w-full h-full z-[15] pointer-events-none"></canvas>
 
     <?php if (empty($heroSliders)): ?>
@@ -97,7 +77,6 @@ if (!function_exists('formatDurationHome')) {
     <?php endif; ?>
 </section>
 
-<!-- مميزات الموقع -->
 <div class="max-w-7xl mx-auto px-4 -mt-10 relative z-40 mb-12 afiu">
     <div class="bg-white rounded-3xl p-5 sm:p-7 flex flex-wrap items-center justify-center gap-6 sm:gap-12 shadow-xl border border-[#f0eae1]">
         <div class="flex items-center gap-3.5">
@@ -130,8 +109,6 @@ if (!function_exists('formatDurationHome')) {
     <div class="max-w-7xl mx-auto px-4 relative z-10 afiu" style="animation-delay: 0.1s">
         <div class="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8 sm:p-12">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-                
-                <!-- النص (يمين) -->
                 <div class="lg:col-span-6 order-2 lg:order-1">
                     <div class="mb-6 flex items-center gap-3">
                         <div class="w-12 h-12 rounded-xl bg-gld-50 text-gld-600 flex items-center justify-center text-xl shadow-sm border border-gld-100">
@@ -139,31 +116,22 @@ if (!function_exists('formatDurationHome')) {
                         </div>
                         <h2 class="text-3xl font-black text-pri-900 font-amiri border-b-2 border-gld-200 pb-2 inline-block">كلمة الشيخ</h2>
                     </div>
-                    
                     <div class="text-lg leading-loose text-brk-600 space-y-4">
                         <p class="font-bold text-pri-800 text-xl mb-4 font-amiri">بسم الله الرحمن الرحيم والصلاة والسلام على أشرف الأنبياء والمرسلين سيدنا محمد وآله وصحبه أجمعين أما بعد..</p>
-                        
                         <p>قال صلى الله عليه وسلم: <span class="text-gld-700 font-bold font-amiri text-xl bg-gld-50 px-2 py-0.5 rounded">(خير الناس أنفعهم للناس)</span>، وقال أيضًا: <span class="text-gld-700 font-bold font-amiri text-xl bg-gld-50 px-2 py-0.5 rounded">(من استطاع منكم أن ينفع أخاه فليفعل)</span>.</p>
-                        
                         <p>فأسأل الله العظيم بأن ينفع بمحتوى هذا الموقع كل من أراد الفائدة، وأسأله سبحانه أن يجعل هذا العمل خالصاً لوجهه الكريم وعمل ينتفع به.</p>
-                        
                         <div class="font-bold text-pri-800 bg-pri-50 p-5 rounded-2xl border-r-4 border-pri-500 mt-8 text-xl font-amiri leading-loose">
                             أسأل الله العلي العظيم أن يشفى كل مريض ويهدي كل ضال وأن يغفر لنا ولجميع المسلمين إنه غفور رحيم.
                         </div>
                     </div>
                 </div>
-
-                <!-- الصورة (يسار) -->
                 <div class="lg:col-span-6 order-1 lg:order-2 relative">
-                    <!-- خلفيات زخرفية للصورة -->
                     <div class="absolute inset-0 bg-gld-500 rounded-[2rem] transform rotate-3 scale-105 opacity-10"></div>
                     <div class="absolute inset-0 bg-pri-500 rounded-[2rem] transform -rotate-3 scale-105 opacity-10"></div>
-                    
                     <div class="relative rounded-[2rem] overflow-hidden shadow-lg border-4 border-white aspect-[4/3] lg:aspect-square bg-gray-100 flex items-center justify-center">
                         <img src="../assets/images/home.jpg" alt="كلمة الشيخ" class="w-full h-full object-cover">
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -177,11 +145,8 @@ if (!function_exists('formatDurationHome')) {
             <h2 class="text-2xl sm:text-3xl font-black text-pri-900 font-amiri">أقسام متجر تشافي</h2>
             <div class="w-16 h-1 bg-gld-500 mx-auto rounded-full mt-3"></div>
         </div>
-
         <div class="flex flex-wrap justify-center gap-6 sm:gap-12">
-            <?php foreach ($mainCategories as $cat): 
-                $cColor = $cat['color_hex'] ?? '#1a582a';
-            ?>
+            <?php foreach ($mainCategories as $cat): $cColor = $cat['color_hex'] ?? '#1a582a'; ?>
             <a href="index.php?page=category&category_id=<?= $cat['id'] ?>" class="group flex flex-col items-center text-center w-28 sm:w-32 no-underline">
                 <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white border border-[#f0eae1] flex items-center justify-center text-2xl sm:text-3xl mb-3.5 group-hover:border-gld-500 group-hover:shadow-[0_0_20px_rgba(200,160,32,0.15)] transition-all duration-300 relative overflow-hidden" style="color: <?= $cColor ?>">
                     <div class="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300" style="background-color: <?= $cColor ?>"></div>
@@ -203,42 +168,33 @@ if (!function_exists('formatDurationHome')) {
 <section class="py-20 green-gradient relative overflow-hidden mb-12">
     <div class="absolute top-0 right-0 w-96 h-96 bg-gld-500/10 rounded-full blur-[100px] pointer-events-none"></div>
     <div class="absolute bottom-0 left-0 w-96 h-96 bg-pri-500/20 rounded-full blur-[100px] pointer-events-none"></div>
-
     <div class="max-w-7xl mx-auto px-4 relative z-10 afiu">
         <div class="text-center mb-14">
             <span class="text-gld-400 font-bold text-xs tracking-widest uppercase mb-2 block">حماية وبركة بأسعار توفيرية</span>
             <h2 class="text-3xl sm:text-4xl font-black text-white font-amiri mb-3">الباقات والعروض</h2>
             <div class="w-16 h-1 bg-gld-500 mx-auto rounded-full mt-3"></div>
         </div>
-
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
             <?php foreach ($featuredPackages as $pkg): 
                 $savings = $pkg['original_total_price'] > 0 ? round((($pkg['original_total_price'] - $pkg['package_price']) / $pkg['original_total_price']) * 100) : 0;
             ?>
                 <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2rem] p-6 text-center hover:bg-white/10 hover:border-gld-500/50 transition-all duration-500 group relative flex flex-col justify-between">
                     <div class="absolute top-0 right-1/2 translate-x-1/2 -translate-y-1/2 bg-gld-500 text-white text-[9px] font-bold px-5 py-1 rounded-full uppercase tracking-wider shadow-md">باقة مخصصة</div>
-                    
                     <div>
                         <div class="w-28 h-28 mx-auto rounded-full overflow-hidden border-4 border-white/15 mb-6 group-hover:scale-105 transition-transform duration-500 shadow-lg">
                             <img src="<?= htmlspecialchars($pkg['image_url'] ?? 'https://picsum.photos/400') ?>" alt="<?= htmlspecialchars($pkg['name']) ?>" class="w-full h-full object-cover">
                         </div>
-                        
                         <h3 class="text-lg sm:text-xl font-bold text-white mb-2 font-amiri leading-snug"><?= htmlspecialchars($pkg['name']) ?></h3>
                         <?php if (!empty($pkg['short_description'])): ?>
                             <p class="text-gray-300 text-xs mb-6 line-clamp-2 leading-relaxed"><?= htmlspecialchars($pkg['short_description']) ?></p>
                         <?php endif; ?>
                     </div>
-                    
                     <div>
                         <div class="bg-black/25 rounded-2xl p-4 mb-6">
                             <div class="text-gray-400 text-xs line-through mb-1">بدلاً من <?= number_format($pkg['original_total_price'], 2) ?> ر.س</div>
-                            <!-- إصلاح مسافة العملات لضمان تحويلها -->
                             <div class="text-2xl sm:text-3xl font-black text-gld-400"><?= number_format($pkg['package_price'], 2) ?> ر.س</div>
                         </div>
-                        
-                        <a href="index.php?page=package_details&id=<?= $pkg['id'] ?>" class="block w-full py-3.5 rounded-full border border-gld-500 text-gld-400 font-bold hover:bg-gld-500 hover:text-pri-900 transition-all duration-300 shadow-sm text-sm">
-                            عرض التفاصيل والبرنامج العلاجي
-                        </a>
+                        <a href="index.php?page=package_details&id=<?= $pkg['id'] ?>" class="block w-full py-3.5 rounded-full border border-gld-500 text-gld-400 font-bold hover:bg-gld-500 hover:text-pri-900 transition-all duration-300 shadow-sm text-sm">عرض التفاصيل والبرنامج العلاجي</a>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -255,25 +211,20 @@ if (!function_exists('formatDurationHome')) {
             <h2 class="text-2xl sm:text-3xl font-black text-pri-900 font-amiri">الصوتيات والفيديوهات</h2>
             <div class="w-16 h-1 bg-gld-500 mx-auto rounded-full mt-3"></div>
         </div>
-
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <!-- قسم الصوتيات -->
             <?php if (!empty($featuredAudios)): ?>
             <div class="bg-gray-50/50 rounded-[2rem] p-6 sm:p-8 border border-gray-100">
                 <h3 class="font-bold text-base sm:text-lg mb-6 flex items-center gap-2.5 border-b border-gray-100 pb-4 text-pri-900"><i class="fas fa-headphones text-pri-600"></i> الصوتيات</h3>
                 <div class="space-y-3">
                     <?php foreach ($featuredAudios as $audio): ?>
                     <a href="index.php?page=audio_details&id=<?= $audio['id'] ?>" class="flex items-center gap-4 p-3.5 rounded-2xl bg-white border border-transparent hover:border-gld-200 hover:shadow-md transition-all duration-300 group no-underline">
-                        <div class="w-11 h-11 rounded-full bg-pri-50 text-pri-600 flex items-center justify-center shrink-0 group-hover:bg-pri-600 group-hover:text-white transition-colors duration-300">
-                            <i class="fas fa-play text-xs ml-1"></i>
-                        </div>
+                        <div class="w-11 h-11 rounded-full bg-pri-50 text-pri-600 flex items-center justify-center shrink-0 group-hover:bg-pri-600 group-hover:text-white transition-colors duration-300"><i class="fas fa-play text-xs ml-1"></i></div>
                         <div class="flex-1 min-w-0">
                             <h4 class="font-bold text-gray-900 text-xs sm:text-sm truncate group-hover:text-pri-700 transition-colors"><?= htmlspecialchars($audio['title']) ?></h4>
                             <p class="text-[10px] text-gray-500 mt-1 truncate">القارئ: <?= htmlspecialchars($audio['narrator'] ?? 'الرقية الشرعية') ?></p>
                         </div>
                         <div class="text-left shrink-0">
                             <div class="text-[10px] text-gray-400 mb-1"><?= formatDurationHome($audio['audio_duration']) ?> دقيقة</div>
-                            <!-- إصلاح مسافة العملات -->
                             <div class="font-bold text-pri-700 text-xs sm:text-sm"><?= $audio['price'] > 0 ? number_format($audio['price'], 2) . ' ر.س' : '<span class="text-green-600">متاح</span>' ?></div>
                         </div>
                     </a>
@@ -281,8 +232,6 @@ if (!function_exists('formatDurationHome')) {
                 </div>
             </div>
             <?php endif; ?>
-
-            <!-- قسم الفيديوهات -->
             <?php if (!empty($featuredVideos)): ?>
             <div class="bg-gray-50/50 rounded-[2rem] p-6 sm:p-8 border border-gray-100">
                 <h3 class="font-bold text-base sm:text-lg mb-6 flex items-center gap-2.5 border-b border-gray-100 pb-4 text-pri-900"><i class="fas fa-video text-gld-600"></i> الدروس والمحاضرات المرئية</h3>
@@ -317,7 +266,6 @@ if (!function_exists('formatDurationHome')) {
             </div>
             <a href="index.php?page=products" class="text-xs sm:text-sm font-bold text-pri-600 hover:text-gld-600 transition flex items-center gap-1.5">عرض الكل <i class="fas fa-arrow-left text-[10px]"></i></a>
         </div>
-        
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <?php foreach ($featuredProducts as $prod):
                 $hasDisc = $prod['old_price'] > $prod['price'];
@@ -336,7 +284,6 @@ if (!function_exists('formatDurationHome')) {
                                 <?php if ($hasDisc): ?>
                                     <span class="text-brk-300 text-xs line-through ml-1"><?= number_format($prod['old_price'], 2) ?> ر.س</span>
                                 <?php endif; ?>
-                                <!-- إصلاح مسافة العملات -->
                                 <span class="text-pri-700 font-black text-lg"><?= number_format($prod['price'], 2) ?> ر.س</span>
                             </div>
                             <button onclick="event.preventDefault(); addToCart('product', <?= $prod['id'] ?>)" class="cf-btn cf-btn-pri cf-btn-sm text-xs py-2 px-3"><i class="fas fa-cart-plus"></i></button>
@@ -352,9 +299,6 @@ if (!function_exists('formatDurationHome')) {
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // ════════════════════════════════════════════════════════════
-    // سكريبت التحكم بالسلايدر (Hero Slider)
-    // ════════════════════════════════════════════════════════════
     let slideIndex = 0;
     const slides = document.querySelectorAll('.hero-slide');
     const dotsContainer = document.getElementById('heroDots');
@@ -374,7 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const oldBg = slides[slideIndex].querySelector('.slide-bg');
             if(oldBg) { oldBg.classList.remove('scale-105'); oldBg.classList.add('scale-100'); }
-            
             const oldContent = slides[slideIndex].querySelector('.slide-content');
             if(oldContent) oldContent.classList.add('translate-y-8', 'opacity-0');
 
@@ -395,7 +338,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const newBg = slides[slideIndex].querySelector('.slide-bg');
             if(newBg) setTimeout(() => { newBg.classList.remove('scale-100'); newBg.classList.add('scale-105'); }, 50);
-
             const newContent = slides[slideIndex].querySelector('.slide-content');
             if(newContent) setTimeout(() => { newContent.classList.remove('translate-y-8', 'opacity-0'); }, 100);
         }
@@ -405,16 +347,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const firstBg = slides[0].querySelector('.slide-bg');
         if(firstBg) setTimeout(() => { firstBg.classList.add('scale-105'); }, 50);
-        
         const firstContent = slides[0].querySelector('.slide-content');
         if(firstContent) setTimeout(() => { firstContent.classList.remove('translate-y-8', 'opacity-0'); }, 100);
 
         slideInterval = setInterval(() => showSlide(slideIndex + 1), 6000);
     }
 
-    // ════════════════════════════════════════════════════════════
-    // سكريبت Canvas للجسيمات المضيئة (Glowing Particles)
-    // ════════════════════════════════════════════════════════════
+    // Canvas Particles
     const canvas = document.getElementById('heroCanvas');
     if (canvas) {
         const ctx = canvas.getContext('2d');
@@ -424,10 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
             width = canvas.width = canvas.offsetWidth;
             height = canvas.height = canvas.offsetHeight;
             particles = [];
-            
-            // عدد الجسيمات يتناسب مع حجم الشاشة (كثافة متوسطة لعدم الإزعاج)
             const particleCount = Math.min(Math.floor((width * height) / 12000), 80); 
-            
             for (let i = 0; i < particleCount; i++) {
                 particles.push({
                     x: Math.random() * width,
@@ -445,33 +381,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function animateParticles() {
             ctx.clearRect(0, 0, width, height);
-            
             particles.forEach((p, i) => {
                 p.x += p.speedX;
                 p.y += p.speedY;
-
-                // ارتداد ناعم من الحواف
                 if (p.x < 0 || p.x > width) p.speedX *= -1;
                 if (p.y < 0 || p.y > height) p.speedY *= -1;
 
-                // رسم الجسيم الدائري המضيء
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(212, 160, 23, ${p.opacity})`; // لون ذهبي
+                ctx.fillStyle = `rgba(212, 160, 23, ${p.opacity})`;
                 ctx.shadowBlur = 15;
                 ctx.shadowColor = "rgba(212, 160, 23, 0.8)";
                 ctx.fill();
 
-                // رسم خطوط اتصال شفافة جداً بين الجسيمات القريبة
                 for (let j = i + 1; j < particles.length; j++) {
                     const p2 = particles[j];
-                    const dx = p.x - p2.x;
-                    const dy = p.y - p2.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
+                    const dist = Math.sqrt((p.x - p2.x)**2 + (p.y - p2.y)**2);
                     if (dist < 100) {
                         ctx.beginPath();
-                        ctx.strokeStyle = `rgba(212, 160, 23, ${0.1 - dist / 1000})`; // ذهبي شفاف جداً
+                        ctx.strokeStyle = `rgba(212, 160, 23, ${0.1 - dist / 1000})`;
                         ctx.lineWidth = 0.5;
                         ctx.moveTo(p.x, p.y);
                         ctx.lineTo(p2.x, p2.y);
@@ -479,10 +407,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
-
             requestAnimationFrame(animateParticles);
         }
-        
         animateParticles();
     }
 });

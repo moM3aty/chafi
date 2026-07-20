@@ -34,6 +34,14 @@ if (isset($_POST['action'])) {
 $messages = $pdo->query("SELECT * FROM contact_messages ORDER BY created_at DESC")->fetchAll();
 ?>
 
+<style>
+    /* تنسيق شريط التمرير المخصص للمودال */
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+
 <div class="max-w-7xl mx-auto px-4 py-8 mb-14 afiu">
     <div class="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
         <h1 class="text-2xl font-black text-pri-900 font-amiri"><i class="fas fa-envelope-open-text text-gld-500 ml-2"></i>رسائل الزوار والاستشارات</h1>
@@ -75,8 +83,8 @@ $messages = $pdo->query("SELECT * FROM contact_messages ORDER BY created_at DESC
                                     <?php if($m['user_id']): ?><span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-md mt-1 inline-block"><i class="fas fa-user-check"></i> عضو مسجل</span><?php endif; ?>
                                 </td>
                                 <td>
-                                    <div dir="ltr" class="text-xs text-brk-500 mb-1"><i class="fas fa-envelope text-gray-400"></i> <?= htmlspecialchars($m['email']) ?></div>
-                                    <div dir="ltr" class="text-xs font-bold text-gray-600"><i class="fas fa-phone-alt text-gray-400"></i> <?= htmlspecialchars($m['phone']) ?></div>
+                                    <div dir="ltr" class="text-xs text-brk-500 mb-1 text-right"><i class="fas fa-envelope text-gray-400"></i> <?= htmlspecialchars($m['email']) ?></div>
+                                    <div dir="ltr" class="text-xs font-bold text-gray-600 text-right"><i class="fas fa-phone-alt text-gray-400"></i> <?= htmlspecialchars($m['phone']) ?></div>
                                 </td>
                                 <td class="text-pri-700 max-w-[200px]">
                                     <div class="truncate" title="<?= htmlspecialchars($m['subject']) ?>"><?= htmlspecialchars($m['subject']) ?></div>
@@ -115,22 +123,34 @@ $messages = $pdo->query("SELECT * FROM contact_messages ORDER BY created_at DESC
     </div>
 </div>
 
-<!-- مودال قراءة الرسالة والرد -->
-<div id="replyModal" class="modal-backdrop">
-    <div class="modal-dialog" style="max-width:650px">
-        <button onclick="closeMdl('replyModal')" class="modal-close"><i class="fas fa-times"></i></button>
-        <div class="modal-header pb-4 border-b border-gray-100 bg-gray-50/50 rounded-t-2xl">
+<!-- مودال قراءة الرسالة والرد (تم تحديثه بالكامل لحل مشكلة القص والتمرير) -->
+<div id="replyModal" class="modal-backdrop" style="z-index: 9999999 !important; padding: 1rem;">
+    <!-- تعديل الـ max-height لكي لا يخرج عن الشاشة، وإضافة flex column -->
+    <div class="modal-dialog w-full relative bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden mx-auto !p-0" style=" max-width: 650px;max-height: 68vh;margin-top: 100px;">
+        
+        <!-- زر الإغلاق -->
+        <button onclick="closeMdl('replyModal')" class="absolute top-4 left-4 w-8 h-8 bg-gray-100 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-colors z-50">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <!-- الهيدر الثابت -->
+        <div class="modal-header p-5 sm:p-6 border-b border-gray-100 bg-gray-50/50 shrink-0">
             <h2 class="text-xl font-black text-pri-900 font-amiri flex items-center gap-2 justify-center"><i class="fas fa-user-circle text-brk-300"></i> رسالة من: <span id="r_name" class="text-pri-600"></span></h2>
         </div>
-        <div class="modal-body !pt-6">
+        
+        <!-- المحتوى القابل للتمرير (Scrollable Body) -->
+        <div class="modal-body p-5 sm:p-6 flex-1 overflow-y-auto custom-scroll">
             
-            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 mb-6 shadow-inner relative overflow-hidden">
+            <div class="bg-gray-50 p-4 sm:p-5 rounded-2xl border border-gray-200 mb-6 shadow-inner relative overflow-hidden">
                 <div class="absolute right-0 top-0 bottom-0 w-1 bg-pri-300"></div>
-                <div class="text-xs text-brk-400 mb-2 font-bold flex items-center gap-1"><i class="fas fa-tag"></i> الموضوع: <span id="r_subject" class="text-pri-900 ml-1"></span></div>
-                <div class="text-sm text-brk-700 leading-loose whitespace-pre-wrap font-medium" id="r_message"></div>
+                <div class="text-xs text-brk-400 mb-3 font-bold flex items-center gap-1"><i class="fas fa-tag"></i> الموضوع: <span id="r_subject" class="text-pri-900 ml-1"></span></div>
+                
+                <!-- صندوق الرسالة: تم تحديد ارتفاعه ليسمح بالتمرير الداخلي للرسائل الطويلة جداً -->
+                <!-- تم إضافة dir="auto" لكي تظهر الرسائل الإنجليزية من اليسار لليمين بشكل سليم -->
+                <div class="text-sm text-brk-700 leading-loose whitespace-pre-wrap font-medium max-h-[35vh] overflow-y-auto pr-2 custom-scroll" id="r_message" dir="auto"></div>
             </div>
 
-            <form method="post">
+            <form method="post" class="mt-auto">
                 <input type="hidden" name="action" value="reply">
                 <input type="hidden" name="msg_id" id="r_msg_id" value="">
                 
@@ -153,6 +173,11 @@ function openReplyModal(data) {
     document.getElementById('r_subject').innerText = data.subject || 'بدون موضوع';
     document.getElementById('r_message').innerText = data.message;
     document.getElementById('r_admin_reply').value = data.reply;
-    openMdl('replyModal');
+    
+    // استخدام الدالة الافتراضية لفتح المودال وإعطائه الأولوية
+    const modal = document.getElementById('replyModal');
+    modal.classList.add('is-active');
+    document.body.style.overflow = 'hidden';
 }
 </script>
+```eof

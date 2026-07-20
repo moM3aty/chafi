@@ -8,7 +8,14 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_role'], ['Admin', 
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-// جلب الطلب (تم إضافة حقل transfer_receipt_url إذا كان موجوداً)
+if (isset($_POST['update_order_status'])) {
+    $newStatus = $_POST['new_status'];
+    $stmtUpdate = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
+    $stmtUpdate->execute([$newStatus, $id]);
+    echo "<script>window.location.href='index.php?page=admin_order_details&id={$id}&updated=1';</script>";
+    exit;
+}
+
 $stmt = $pdo->prepare("SELECT o.*, u.full_name, u.email FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.id = ?");
 $stmt->execute([$id]);
 $order = $stmt->fetch();
@@ -17,7 +24,6 @@ if (!$order) {
     echo "<div class='text-center py-20 font-bold text-red-500'>الطلب غير موجود</div>"; exit;
 }
 
-// جلب عناصر الطلب
 $stmtItems = $pdo->prepare("SELECT * FROM order_items WHERE order_id = ?");
 $stmtItems->execute([$id]);
 $items = $stmtItems->fetchAll();
@@ -27,15 +33,32 @@ $statusClr = ['Pending'=>'bg-yellow-50 text-yellow-700 border-yellow-200','Proce
 ?>
 
 <div class="max-w-5xl mx-auto px-4 py-8 mb-14 afiu">
-    <div class="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4 border-b border-gray-200 pb-4">
+    
+    <?php if(isset($_GET['updated'])): ?>
+        <div class="bg-green-50 border-r-4 border-green-500 p-4 rounded-xl text-green-700 font-bold mb-6 shadow-sm"><i class="fas fa-check-circle ml-2"></i> تم تحديث حالة الطلب بنجاح. (إذا تم تغيير الحالة إلى "تم التسليم" أو "قيد التجهيز"، سيتمكن العميل من تحميل الكتب الرقمية فوراً).</div>
+    <?php endif; ?>
+
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4 border-b border-gray-200 pb-4">
         <div>
             <h1 class="text-2xl font-black text-pri-900 font-amiri mb-1"><i class="fas fa-file-invoice-dollar text-gld-500 ml-2"></i>فاتورة الطلب</h1>
             <p class="text-sm text-brk-500" dir="ltr">#<?= htmlspecialchars($order['order_number']) ?></p>
         </div>
-        <div class="flex gap-2 items-center">
-            <span class="badge <?= $statusClr[$order['status']] ?? 'bg-gray-100 text-gray-600' ?> text-sm py-1 px-3 ml-2"><?= $statusAr[$order['status']] ?? $order['status'] ?></span>
+        
+        <div class="flex flex-wrap gap-3 items-center">
+            <!-- فورم تغيير حالة الطلب -->
+            <form method="post" class="flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200">
+                <input type="hidden" name="update_order_status" value="1">
+                <span class="text-xs font-bold text-gray-600 mr-2">تحديث الحالة:</span>
+                <select name="new_status" class="form-select !py-1 !px-2 !text-xs !rounded-md font-bold <?= $statusClr[$order['status']] ?? '' ?>">
+                    <?php foreach($statusAr as $key => $val): ?>
+                        <option value="<?= $key ?>" <?= $order['status'] == $key ? 'selected' : '' ?>><?= $val ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm !py-1 !px-3 shadow-sm text-xs"><i class="fas fa-save"></i> حفظ</button>
+            </form>
+
             <button onclick="window.print()" class="cf-btn cf-btn-gld cf-btn-sm"><i class="fas fa-print"></i> طباعة</button>
-            <a href="index.php?page=admin_orders" class="cf-btn cf-btn-out cf-btn-sm bg-white"><i class="fas fa-arrow-right"></i> العودة للطلبات</a>
+            <a href="index.php?page=admin_orders" class="cf-btn cf-btn-out cf-btn-sm bg-white"><i class="fas fa-arrow-right"></i> للطلبات</a>
         </div>
     </div>
 
@@ -97,7 +120,6 @@ $statusClr = ['Pending'=>'bg-yellow-50 text-yellow-700 border-yellow-200','Proce
         </div>
     </div>
 
-    <!-- جدول المنتجات -->
     <div class="erp-card overflow-hidden">
         <h3 class="font-bold text-pri-900 p-6 border-b border-gray-100 bg-white"><i class="fas fa-shopping-basket text-gld-500 ml-1"></i> المنتجات المطلوبة</h3>
         <div class="table-responsive !border-0 !shadow-none !rounded-none">
@@ -113,8 +135,8 @@ $statusClr = ['Pending'=>'bg-yellow-50 text-yellow-700 border-yellow-200','Proce
                 </thead>
                 <tbody>
                     <?php foreach($items as $item): 
-                        $typeLabel = ['product'=>'منتج ملموس', 'audio'=>'مقطع صوتي', 'video'=>'فيديو', 'package'=>'باقة'][$item['item_type']] ?? 'غير محدد';
-                        $typeColor = ['product'=>'text-pri-600 bg-pri-50', 'audio'=>'text-green-600 bg-green-50', 'video'=>'text-purple-600 bg-purple-50', 'package'=>'text-gld-600 bg-gld-50'][$item['item_type']] ?? 'text-gray-600 bg-gray-50';
+                        $typeLabel = ['product'=>'منتج ملموس', 'audio'=>'مقطع صوتي', 'video'=>'فيديو', 'package'=>'باقة', 'book'=>'كتاب رقمي'][$item['item_type']] ?? 'غير محدد';
+                        $typeColor = ['product'=>'text-pri-600 bg-pri-50', 'audio'=>'text-green-600 bg-green-50', 'video'=>'text-purple-600 bg-purple-50', 'package'=>'text-gld-600 bg-gld-50', 'book'=>'text-blue-600 bg-blue-50'][$item['item_type']] ?? 'text-gray-600 bg-gray-50';
                     ?>
                         <tr>
                             <td><span class="px-2 py-1 rounded text-[10px] font-bold <?= $typeColor ?>"><?= $typeLabel ?></span></td>

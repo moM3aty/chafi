@@ -3,7 +3,6 @@
 session_start();
 require_once '../config.php';
 
-// تنظيف أي مخرجات سابقة لضمان عودة JSON سليم 100% لتجنب خطأ "حدث خطأ في الاتصال"
 if (ob_get_length()) ob_clean();
 header('Content-Type: application/json');
 
@@ -11,13 +10,10 @@ $response = ['success' => false, 'message' => ''];
 
 try {
     $action = isset($_POST['action']) ? $_POST['action'] : '';
-    
-    // التقاط نوع العنصر ورقمه (الأسلوب الجديد)
     $itemType = $_POST['item_type'] ?? ''; 
     $itemId = (int)($_POST['item_id'] ?? 0);
     $qty = (int)($_POST['quantity'] ?? 1);
     
-    // التوافق الرجعي (Fallback) مع أكواد الـ JS القديمة في بعض الصفحات إن وجدت
     if (empty($itemType) || $itemId === 0) {
         if (isset($_POST['product_id'])) { $itemId = (int)$_POST['product_id']; $itemType = 'product'; }
         elseif (isset($_POST['audio_id'])) { $itemId = (int)$_POST['audio_id']; $itemType = 'audio'; }
@@ -25,15 +21,12 @@ try {
         elseif (isset($_POST['package_id'])) { $itemId = (int)$_POST['package_id']; $itemType = 'package'; }
     }
 
-    if (empty($itemType)) $itemType = 'product'; // افتراضي
-    
+    if (empty($itemType)) $itemType = 'product';
     $cartKey = $itemType . '_' . $itemId;
 
     if ($action === 'add') {
         if ($itemId > 0) {
-            $stock = 99999; // المخزون الافتراضي للملفات الرقمية والصوتيات والفيديوهات
-            
-            // التحقق من المخزون للمنتجات الملموسة والتحقق مما إذا كان المنتج رقمي
+            $stock = 99999;
             if ($itemType === 'product') {
                 $stmt = $pdo->prepare("SELECT stock_quantity, is_digital FROM products WHERE id = ?");
                 $stmt->execute([$itemId]);
@@ -44,29 +37,19 @@ try {
             }
 
             if ($stock >= $qty) {
-                // إذا كان منتج رقمي (صوتي، فيديو، باقة، أو منتج digital)، لا نضيفه مرتين لنفس المستخدم في السلة ولا نزيد الكمية
-                if (in_array($itemType, ['audio', 'video', 'package']) || ($itemType === 'product' && isset($pData) && $pData['is_digital'] == 1)) {
-                     $_SESSION['cart'][$cartKey] = [
-                        'type' => $itemType,
-                        'id' => $itemId,
-                        'qty' => 1 // المنتجات الرقمية تُشترى مرة واحدة فقط
-                    ];
+                // منع التكرار للملفات الرقمية (بما فيها الكتب)
+                if (in_array($itemType, ['audio', 'video', 'package', 'book']) || ($itemType === 'product' && isset($pData) && $pData['is_digital'] == 1)) {
+                     $_SESSION['cart'][$cartKey] = ['type' => $itemType, 'id' => $itemId, 'qty' => 1];
                     $response['message'] = 'تمت الإضافة للسلة بنجاح (كمنتج رقمي مرة واحدة)';
                 } else {
-                    // للمنتجات الملموسة العادية
                     if (isset($_SESSION['cart'][$cartKey])) {
                         $newQty = $_SESSION['cart'][$cartKey]['qty'] + $qty;
                         $_SESSION['cart'][$cartKey]['qty'] = min($newQty, $stock);
                     } else {
-                        $_SESSION['cart'][$cartKey] = [
-                            'type' => $itemType,
-                            'id' => $itemId,
-                            'qty' => $qty
-                        ];
+                        $_SESSION['cart'][$cartKey] = ['type' => $itemType, 'id' => $itemId, 'qty' => $qty];
                     }
                     $response['message'] = 'تمت الإضافة للسلة بنجاح';
                 }
-                
                 $response['success'] = true;
             } else {
                 $response['message'] = 'الكمية المطلوبة غير متوفرة في المخزون';
@@ -82,9 +65,7 @@ try {
                 $stmt = $pdo->prepare("SELECT stock_quantity, is_digital FROM products WHERE id = ?");
                 $stmt->execute([$itemId]);
                 $pData = $stmt->fetch();
-                if ($pData && $pData['is_digital'] == 0) {
-                    $stock = $pData['stock_quantity'];
-                }
+                if ($pData && $pData['is_digital'] == 0) { $stock = $pData['stock_quantity']; }
             }
             $_SESSION['cart'][$cartKey]['qty'] = min($qty, $stock);
             $response['success'] = true;
@@ -97,10 +78,8 @@ try {
             $response['message'] = 'تم حذف العنصر من السلة';
         }
     } 
-    
     elseif ($action === 'apply_coupon') {
         $code = strtoupper(trim($_POST['coupon_code'] ?? ''));
-        
         $stmt = $pdo->prepare("SELECT * FROM coupons WHERE code = ? AND is_active = 1");
         $stmt->execute([$code]);
         $coupon = $stmt->fetch();
@@ -147,6 +126,7 @@ try {
             
             if ($item['type'] === 'audio') $table = 'audios';
             elseif ($item['type'] === 'video') $table = 'videos';
+            elseif ($item['type'] === 'book') $table = 'books';
             elseif ($item['type'] === 'package') { $table = 'packages'; $priceCol = 'package_price'; }
             
             $stmt = $pdo->prepare("SELECT $priceCol as price " . ($item['type'] == 'product' ? ", is_digital" : "") . " FROM $table WHERE id = ?");
@@ -166,7 +146,6 @@ try {
         }
     }
     
-    // الشحن يحسب فقط للمنتجات الملموسة
     $shippingCost = ($hasPhysicalItems && $subTotal > 0 && $subTotal < 200) ? 25 : 0;
     $couponDiscount = 0;
     
@@ -219,6 +198,6 @@ try {
 
 } catch (\Throwable $e) {
     if (ob_get_length()) ob_clean();
-    echo json_encode(['success' => false, 'message' => 'حدث خطأ غير متوقع: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'حدث خطأ غير متوقع']);
 }
 ?>
