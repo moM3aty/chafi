@@ -201,7 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addr_city'])) {
             <?php endif; ?>
         </div>
 
-        <!-- ═══ التعديل هنا: تبويب مواعيدي وجلساتي ═══ -->
+        <!-- ═══ تبويب: مواعيدي وجلساتي ═══ -->
         <div id="dpanel-appointments" class="dash-dpanel hidden p-6 bg-gray-50/30">
             <?php if (empty($appointments)): ?>
                 <div class="text-center py-14 text-brk-400 bg-white rounded-2xl border border-dashed border-gray-200 shadow-sm">
@@ -248,7 +248,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addr_city'])) {
                                     </div>
                                 </div>
 
-                                <!-- التعديل: إظهار الموعد المعتمد من الإدارة -->
                                 <?php if ($apt['status'] == 'Confirmed'): ?>
                                 <div class="bg-green-50 p-3 rounded-xl border border-green-100 mt-3 flex items-start gap-2 shadow-inner">
                                     <i class="fas fa-calendar-check text-green-500 mt-0.5"></i>
@@ -418,13 +417,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addr_city'])) {
                     </div>
                 </div>
 
-                <div class="form-group mb-8">
+                <div class="form-group mb-6">
                     <label class="form-label">البريد الإلكتروني <span class="req">*</span></label>
                     <div class="relative">
                         <i class="fas fa-envelope absolute right-4 top-1/2 -translate-y-1/2 text-brk-300"></i>
                         <input type="email" name="email" class="form-control !pr-10 bg-gray-50" dir="ltr" value="<?= htmlspecialchars($user['email']) ?>" required readonly title="لا يمكن تغيير البريد الإلكتروني الأساسي من هنا">
                     </div>
-                    <p class="text-xs text-brk-400 mt-2"><i class="fas fa-info-circle"></i> لتغيير البريد الإلكتروني يرجى التواصل مع الإدارة.</p>
+                </div>
+
+                <!-- التعديل الجديد: إضافة حقول كلمة المرور -->
+                <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 mb-8">
+                    <h4 class="font-bold text-pri-900 mb-4 flex items-center gap-2"><i class="fas fa-lock text-pri-500"></i> تغيير كلمة المرور (اختياري)</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-group !mb-0">
+                            <label class="form-label text-xs">كلمة المرور الجديدة</label>
+                            <input type="password" name="new_password" id="new_pass" class="form-control text-sm" placeholder="اتركه فارغاً إذا لا تريد التغيير" dir="ltr">
+                        </div>
+                        <div class="form-group !mb-0">
+                            <label class="form-label text-xs">تأكيد كلمة المرور الجديدة</label>
+                            <input type="password" name="confirm_new_password" id="confirm_pass" class="form-control text-sm" placeholder="أعد كتابة الباسورد الجديد" dir="ltr">
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-brk-400 mt-2"><i class="fas fa-info-circle"></i> يمكنك ترك هذه الحقول فارغة إذا كنت ترغب بتغيير اسمك أو جوالك فقط.</p>
                 </div>
 
                 <button type="submit" id="profileBtn" class="btn btn-primary btn-lg shadow-xl hover:scale-105 transition-transform w-full sm:w-auto px-12">
