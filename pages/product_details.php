@@ -87,12 +87,12 @@ if ($totalReviews > 0) {
                 <span class="text-xs text-brk-500"><i class="fas fa-shopping-basket text-pri-400 ml-1"></i> تم شراءه <?= $product['sales_count'] ?> مرة</span>
             </div>
 
-            <div class="flex items-end gap-3 mb-6 bg-pri-50 p-4 rounded-xl border border-pri-100 inline-flex w-fit">
-                <span class="text-4xl font-black text-pri-700"><?= number_format($product['price'], 2) ?> <span class="text-lg font-bold">ر.س</span></span>
-                <?php if ($product['old_price'] > $product['price']): ?>
-                    <span class="text-lg text-brk-300 line-through mb-1"><?= number_format($product['old_price'], 2) ?> ر.س</span>
-                <?php endif; ?>
-            </div>
+          <div class="flex items-end gap-3 mb-6 bg-pri-50 p-4 rounded-xl border border-pri-100 inline-flex w-fit">
+                <span class="text-4xl font-black text-pri-700"><?= number_format($product['price'], 2) ?> ر.س</span>
+                <?php if ($product['old_price'] > $product['price']): ?>
+                    <span class="text-lg text-brk-300 line-through mb-1"><?= number_format($product['old_price'], 2) ?> ر.س</span>
+                <?php endif; ?>
+            </div>
 
             <!-- الوصف الشامل يعمل بصيغة HTML -->
             <div class="prose prose-sm text-brk-600 leading-loose mb-8 custom-html-content">

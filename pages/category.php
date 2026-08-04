@@ -175,9 +175,9 @@ function formatDur($sec) {
                             <div class="mt-auto flex items-center justify-between pt-3 border-t border-gray-50">
                                 <div>
                                     <?php if ($hasDisc): ?>
-                                        <span class="text-brk-300 text-xs line-through ml-1"><?= number_format($prod['old_price'], 2) ?></span>
+                                        <span class="text-brk-300 text-xs line-through ml-1"><?= number_format($prod['old_price'], 2) ?> ر.س</span>
                                     <?php endif; ?>
-                                    <span class="text-pri-700 font-black text-lg"><?= number_format($prod['price'], 2) ?> <span class="text-xs font-bold">ر.س</span></span>
+                                    <span class="text-pri-700 font-black text-lg"><?= number_format($prod['price'], 2) ?> ر.س</span>
                                 </div>
                                 <button onclick="event.preventDefault(); addToCart(<?= $prod['id'] ?>, 1)" class="cf-btn cf-btn-pri cf-btn-sm text-xs py-2 px-3"><i class="fas fa-cart-plus"></i></button>
                             </div>
@@ -241,7 +241,7 @@ function formatDur($sec) {
                         </div>
                     </div>
                     <div class="flex flex-col items-end gap-1 shrink-0">
-                        <span class="font-bold text-pri-700 text-sm"><?= $audio['price'] > 0 ? number_format($audio['price'], 0) . ' ر.س' : '<span class="text-green-600">مجاني</span>' ?></span>
+                        <span class="font-bold text-pri-700 text-sm"><?= $audio['price'] > 0 ? number_format($audio['price'], 2) . ' ر.س' : '<span class="text-green-600">مجاني</span>' ?></span>
                         <span class="cf-btn cf-btn-out cf-btn-sm text-[10px] !py-1 !px-3">استماع ←</span>
                     </div>
                 </a>
@@ -277,7 +277,7 @@ function formatDur($sec) {
                             <span><i class="fas fa-eye text-[10px] ml-0.5"></i><?= $video['view_count'] ?></span>
                         </div>
                         <div class="flex items-center justify-between pt-3 border-t border-gray-50">
-                            <span class="font-black text-pri-600"><?= $video['price'] > 0 ? number_format($video['price'], 0) . ' ر.س' : '<span class="text-green-600 font-bold">مجاني</span>' ?></span>
+                            <span class="font-black text-pri-600"><?= $video['price'] > 0 ? number_format($video['price'], 2) . ' ر.س' : '<span class="text-green-600 font-bold">مجاني</span>' ?></span>
                             <span class="cf-btn cf-btn-gld cf-btn-sm text-xs !py-1 !px-3">مشاهدة ←</span>
                         </div>
                     </div>
